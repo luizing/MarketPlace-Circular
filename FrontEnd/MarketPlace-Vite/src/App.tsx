@@ -1,3 +1,4 @@
+import Anuncios from './Pages/Anuncios'
 import './App.css'
 
 function App() {
@@ -66,7 +67,7 @@ function App() {
           </div>
         </article>
       </section>
-      <section id="anuncios" className="landing-section" aria-label="Anuncios" />
+      <Anuncios />
       <section
         id="estatisticas"
         className="landing-section"

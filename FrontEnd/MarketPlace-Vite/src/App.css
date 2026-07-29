@@ -202,6 +202,122 @@
   text-decoration: none;
 }
 
+.ads-section {
+  box-sizing: border-box;
+  color: #000;
+  min-height: 100svh;
+  padding: 96px 48px;
+  scroll-margin-top: 72px;
+}
+
+.ads-section__inner {
+  margin: 0 auto;
+  max-width: 1180px;
+  width: 100%;
+}
+
+.ads-section__controls {
+  align-items: flex-start;
+  display: grid;
+  gap: 24px;
+  grid-template-columns: minmax(260px, 420px) 1fr;
+  margin-bottom: 40px;
+}
+
+.ads-section__search {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ads-section__search span,
+.ads-section__categories legend {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.ads-section__search input {
+  border: 1px solid #000;
+  border-radius: 999px;
+  box-sizing: border-box;
+  color: #000;
+  font: inherit;
+  min-height: 46px;
+  padding: 0 18px;
+  width: 100%;
+}
+
+.ads-section__categories {
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.ads-section__category-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.ads-section__category-list label {
+  align-items: center;
+  border: 1px solid #000;
+  border-radius: 999px;
+  display: flex;
+  gap: 8px;
+  padding: 10px 14px;
+}
+
+.ads-section__category-list input {
+  accent-color: #000;
+}
+
+.ads-section__grid {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.product-card {
+  border: 1px solid #000;
+  border-radius: 8px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.product-card img {
+  aspect-ratio: 4 / 3;
+  display: block;
+  object-fit: cover;
+  width: 100%;
+}
+
+.product-card__body {
+  padding: 18px;
+}
+
+.product-card h3 {
+  font-size: 18px;
+  line-height: 1.25;
+  margin: 0 0 10px;
+}
+
+.product-card p {
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0 0 16px;
+}
+
+.product-card__tag {
+  border: 1px solid #000;
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 6px 12px;
+}
+
 @media (max-width: 900px) {
   .hero-section {
     min-height: auto;
@@ -215,6 +331,18 @@
 
   .hero-section__image {
     max-width: 520px;
+  }
+
+  .ads-section {
+    padding: 72px 24px;
+  }
+
+  .ads-section__controls {
+    grid-template-columns: 1fr;
+  }
+
+  .ads-section__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -232,6 +360,10 @@
   }
 
   .hero-section__footer {
+    grid-template-columns: 1fr;
+  }
+
+  .ads-section__grid {
     grid-template-columns: 1fr;
   }
 }
