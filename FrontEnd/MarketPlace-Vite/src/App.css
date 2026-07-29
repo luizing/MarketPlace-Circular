@@ -45,9 +45,108 @@
   padding: 8px 18px;
 }
 
+.hero-section {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  min-height: calc(100svh - 72px);
+  padding: 64px 48px 32px;
+  scroll-margin-top: 72px;
+}
+
+.hero-section__content {
+  align-items: center;
+  display: grid;
+  gap: 56px;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 520px);
+  margin: 0 auto;
+  max-width: 1180px;
+  width: 100%;
+}
+
+.hero-section__text {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: column;
+  max-width: 560px;
+}
+
+.hero-section__text h1 {
+  color: #000;
+  font-size: clamp(40px, 6vw, 72px);
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1;
+  margin: 0 0 24px;
+}
+
+.hero-section__text p {
+  color: #000;
+  font-size: 18px;
+  line-height: 1.6;
+  margin: 0 0 32px;
+}
+
+.hero-section__button {
+  border: 1px solid #000;
+  border-radius: 999px;
+  color: #000;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 12px 24px;
+  text-decoration: none;
+}
+
+.hero-section__image {
+  aspect-ratio: 1 / 1;
+  background: #f4f4f4;
+  border: 1px solid #000;
+  border-radius: 8px;
+  width: 100%;
+}
+
+.hero-section__footer {
+  align-items: center;
+  display: grid;
+  gap: 24px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 48px auto 0;
+  max-width: 1180px;
+  width: 100%;
+}
+
+.hero-section__logo-slot {
+  align-items: center;
+  border: 1px solid #000;
+  border-radius: 8px;
+  box-sizing: border-box;
+  color: #000;
+  display: flex;
+  font-size: 14px;
+  font-weight: 600;
+  justify-content: center;
+  min-height: 72px;
+}
+
 .landing-section {
   min-height: 100svh;
   scroll-margin-top: 72px;
+}
+
+@media (max-width: 900px) {
+  .hero-section {
+    min-height: auto;
+    padding: 40px 24px 32px;
+  }
+
+  .hero-section__content {
+    gap: 40px;
+    grid-template-columns: 1fr;
+  }
+
+  .hero-section__image {
+    max-width: 520px;
+  }
 }
 
 @media (max-width: 720px) {
@@ -61,5 +160,9 @@
   .navbar__links {
     flex-wrap: wrap;
     gap: 12px 18px;
+  }
+
+  .hero-section__footer {
+    grid-template-columns: 1fr;
   }
 }

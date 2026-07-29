@@ -18,7 +18,29 @@ function App() {
         </nav>
       </header>
 
-      <section id="inicio" className="landing-section" aria-label="Inicio" />
+      <section id="inicio" className="hero-section" aria-label="Inicio">
+        <div className="hero-section__content">
+          <div className="hero-section__text">
+            <h1>Encontre e anuncie itens universitários</h1>
+            <p>
+              Esse projeto é destinado a ajudar alunos a encontrar itens necessários
+              para sua formação academica com outros alunos, evitando a necessidade da compra
+              de novos produtos, reduzindo o gasto e a produção de lixo.
+            </p>
+            <a className="hero-section__button" href="#anuncios">
+              Participe Agora!
+            </a>
+          </div>
+
+          <div className="hero-section__image" role="img" aria-label="Imagem placeholder" />
+        </div>
+
+        <footer className="hero-section__footer" aria-label="Logos parceiras">
+          <div className="hero-section__logo-slot">Logo</div>
+          <div className="hero-section__logo-slot">Logo</div>
+          <div className="hero-section__logo-slot">Logo</div>
+        </footer>
+      </section>
       <section id="sobre-nos" className="landing-section" aria-label="Sobre nos" />
       <section id="anuncios" className="landing-section" aria-label="Anuncios" />
       <section
