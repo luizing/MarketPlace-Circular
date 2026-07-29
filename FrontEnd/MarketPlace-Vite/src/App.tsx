@@ -70,9 +70,24 @@ function App() {
       <Anuncios />
       <section
         id="estatisticas"
-        className="landing-section"
+        className="stats-section"
         aria-label="Estatisticas"
-      />
+      >
+        <div className="stats-section__content">
+          <p>
+            <span>Numero de itens anunciados:</span>
+            <strong>128</strong>
+          </p>
+          <p>
+            <span>Numero de itens vendidos:</span>
+            <strong>42</strong>
+          </p>
+          <p>
+            <span>Numero de alunos participando:</span>
+            <strong>76</strong>
+          </p>
+        </div>
+      </section>
       <section id="login" className="landing-section" aria-label="Login" />
     </main>
   )

@@ -318,6 +318,46 @@
   padding: 6px 12px;
 }
 
+.stats-section {
+  align-items: center;
+  box-sizing: border-box;
+  color: #000;
+  display: flex;
+  justify-content: center;
+  min-height: 100svh;
+  padding: 96px 24px;
+  scroll-margin-top: 72px;
+}
+
+.stats-section__content {
+  box-sizing: border-box;
+  display: grid;
+  gap: 56px;
+  max-width: 1180px;
+  width: 100%;
+}
+
+.stats-section__content p {
+  align-items: center;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  margin: 0;
+}
+
+.stats-section__content span {
+  font-size: clamp(32px, 5vw, 72px);
+  font-weight: 600;
+  line-height: 1.05;
+}
+
+.stats-section__content strong {
+  font-size: clamp(40px, 7vw, 96px);
+  line-height: 1;
+  min-width: 120px;
+  text-align: center;
+}
+
 @media (max-width: 900px) {
   .hero-section {
     min-height: auto;
@@ -365,5 +405,10 @@
 
   .ads-section__grid {
     grid-template-columns: 1fr;
+  }
+
+  .stats-section__content p {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }
