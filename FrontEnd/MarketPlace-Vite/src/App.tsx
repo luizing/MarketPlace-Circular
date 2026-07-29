@@ -1,4 +1,5 @@
 import Anuncios from './Pages/Anuncios'
+import placeholderLanding from './assets/PlaceHolder Landing.png'
 import './App.css'
 
 function App() {
@@ -33,7 +34,11 @@ function App() {
             </a>
           </div>
 
-          <div className="hero-section__image" role="img" aria-label="Imagem placeholder" />
+          <img
+            className="hero-section__image"
+            src={placeholderLanding}
+            alt="Imagem placeholder da landing page"
+          />
         </div>
 
         <footer className="hero-section__footer" aria-label="Logos parceiras">

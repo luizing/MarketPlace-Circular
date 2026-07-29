@@ -99,9 +99,10 @@
 
 .hero-section__image {
   aspect-ratio: 1 / 1;
-  background: #f4f4f4;
   border: 1px solid #000;
   border-radius: 8px;
+  display: block;
+  object-fit: cover;
   width: 100%;
 }
 
