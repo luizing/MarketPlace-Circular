@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import AnuncioForm from './AnuncioForm'
 
 type Categoria = 'Livros' | 'Xerox' | 'Calculadoras' | 'Eletronicos'
 type TipoAnuncio = 'venda' | 'doacao'
@@ -11,6 +12,7 @@ type Produto = {
   tipo: TipoAnuncio
   valor?: number
   imagem: string
+  interessados: number
 }
 
 const categorias: Categoria[] = ['Livros', 'Xerox', 'Calculadoras', 'Eletronicos']
@@ -24,6 +26,7 @@ const produtosMockados: Produto[] = [
     tipo: 'venda',
     valor: 45,
     imagem: 'https://picsum.photos/seed/livro-calculo/640/480',
+    interessados: 7,
   },
   {
     id: 2,
@@ -32,6 +35,7 @@ const produtosMockados: Produto[] = [
     categoria: 'Xerox',
     tipo: 'doacao',
     imagem: 'https://picsum.photos/seed/xerox-dados/640/480',
+    interessados: 12,
   },
   {
     id: 3,
@@ -41,6 +45,7 @@ const produtosMockados: Produto[] = [
     tipo: 'venda',
     valor: 60,
     imagem: 'https://picsum.photos/seed/calculadora/640/480',
+    interessados: 4,
   },
   {
     id: 4,
@@ -50,6 +55,7 @@ const produtosMockados: Produto[] = [
     tipo: 'venda',
     valor: 85,
     imagem: 'https://picsum.photos/seed/arduino-kit/640/480',
+    interessados: 9,
   },
 ]
 
@@ -67,6 +73,13 @@ function formatarValor(produto: Produto) {
 function Anuncios() {
   const [termoBusca, setTermoBusca] = useState('')
   const [categoriasSelecionadas, setCategoriasSelecionadas] = useState<Categoria[]>([])
+  const [formularioAberto, setFormularioAberto] = useState(false)
+  const [produtoSelecionado, setProdutoSelecionado] = useState<Produto | null>(null)
+  const [interessadosPorProduto, setInteressadosPorProduto] = useState(() =>
+    Object.fromEntries(
+      produtosMockados.map((produto) => [produto.id, produto.interessados]),
+    ) as Record<number, number>,
+  )
 
   const produtosFiltrados = useMemo(() => {
     const termoNormalizado = termoBusca.trim().toLowerCase()
@@ -89,9 +102,22 @@ function Anuncios() {
     )
   }
 
+  function registrarInteresse(produtoId: number) {
+    setInteressadosPorProduto((interessadosAtuais) => ({
+      ...interessadosAtuais,
+      [produtoId]: interessadosAtuais[produtoId] + 1,
+    }))
+  }
+
   return (
     <section id="anuncios" className="ads-section" aria-label="Anuncios">
       <div className="ads-section__inner">
+        <div className="ads-section__header">
+          <button type="button" onClick={() => setFormularioAberto(true)}>
+            Anunciar produto
+          </button>
+        </div>
+
         <div className="ads-section__controls">
           <label className="ads-section__search">
             <span>Pesquisar por nome</span>
@@ -122,17 +148,61 @@ function Anuncios() {
 
         <div className="ads-section__grid" aria-live="polite">
           {produtosFiltrados.map((produto) => (
-            <article className="product-card" key={produto.id}>
+            <button
+              type="button"
+              className="product-card"
+              key={produto.id}
+              onClick={() => setProdutoSelecionado(produto)}
+            >
               <img src={produto.imagem} alt={produto.nome} />
               <div className="product-card__body">
                 <h3>{produto.nome}</h3>
                 <p>{produto.descricao}</p>
                 <span className="product-card__tag">{formatarValor(produto)}</span>
               </div>
-            </article>
+            </button>
           ))}
         </div>
       </div>
+
+      {formularioAberto && <AnuncioForm onClose={() => setFormularioAberto(false)} />}
+
+      {produtoSelecionado && (
+        <div className="product-modal-overlay" role="presentation">
+          <section className="product-modal" aria-label="Detalhes do produto">
+            <div className="product-modal__header">
+              <h2>{produtoSelecionado.nome}</h2>
+              <button
+                type="button"
+                onClick={() => setProdutoSelecionado(null)}
+                aria-label="Fechar detalhes do produto"
+              >
+                Fechar
+              </button>
+            </div>
+
+            <img src={produtoSelecionado.imagem} alt={produtoSelecionado.nome} />
+
+            <div className="product-modal__content">
+              <span className="product-modal__category">
+                {produtoSelecionado.categoria}
+              </span>
+              <p>{produtoSelecionado.descricao}</p>
+              <strong>{formatarValor(produtoSelecionado)}</strong>
+              <p className="product-modal__interest-count">
+                Usuarios interessados: {interessadosPorProduto[produtoSelecionado.id]}
+              </p>
+              <button
+                type="button"
+                className="product-modal__interest-button"
+                onClick={() => registrarInteresse(produtoSelecionado.id)}
+              >
+                me interessei
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
     </section>
   )
 }

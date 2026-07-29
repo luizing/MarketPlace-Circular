@@ -1,8 +1,13 @@
 import Anuncios from './Pages/Anuncios'
+import Login from './Pages/Login'
 import placeholderLanding from './assets/PlaceHolder Landing.png'
 import './App.css'
 
 function App() {
+  if (window.location.pathname === '/login') {
+    return <Login />
+  }
+
   return (
     <main className="landing-page" aria-label="Landing page">
       <header className="navbar">
@@ -14,7 +19,7 @@ function App() {
           <a href="#sobre-nos">Sobre nos</a>
           <a href="#anuncios">Anuncios</a>
           <a href="#estatisticas">Estatisticas</a>
-          <a className="navbar__login" href="#login">
+          <a className="navbar__login" href="/login">
             Login
           </a>
         </nav>
@@ -93,7 +98,6 @@ function App() {
           </p>
         </div>
       </section>
-      <section id="login" className="landing-section" aria-label="Login" />
     </main>
   )
 }
