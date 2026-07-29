@@ -117,15 +117,18 @@
 
 .hero-section__logo-slot {
   align-items: center;
-  border: 1px solid #000;
-  border-radius: 8px;
   box-sizing: border-box;
-  color: #000;
   display: flex;
-  font-size: 14px;
-  font-weight: 600;
   justify-content: center;
   min-height: 72px;
+}
+
+.hero-section__logo-slot img {
+  display: block;
+  max-height: 52px;
+  max-width: 180px;
+  object-fit: contain;
+  width: 100%;
 }
 
 .landing-section {

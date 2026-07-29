@@ -36,9 +36,15 @@ function App() {
         </div>
 
         <footer className="hero-section__footer" aria-label="Logos parceiras">
-          <div className="hero-section__logo-slot">Logo</div>
-          <div className="hero-section__logo-slot">Logo</div>
-          <div className="hero-section__logo-slot">Logo</div>
+          <div className="hero-section__logo-slot">
+            <img src="/Unifor_logo.svg.webp" alt="Unifor" />
+          </div>
+          <div className="hero-section__logo-slot">
+            <img src="/VORTEX.png" alt="Vortex" />
+          </div>
+          <div className="hero-section__logo-slot">
+            <img src="/luizing.png" alt="Luizing" />
+          </div>
         </footer>
       </section>
       <section id="sobre-nos" className="landing-section" aria-label="Sobre nos" />
