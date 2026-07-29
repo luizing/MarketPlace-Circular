@@ -136,6 +136,72 @@
   scroll-margin-top: 72px;
 }
 
+.about-section {
+  align-items: center;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  min-height: 100svh;
+  padding: 96px 24px;
+  scroll-margin-top: 72px;
+}
+
+.about-card {
+  align-items: center;
+  border: 1px solid #000;
+  border-radius: 8px;
+  box-sizing: border-box;
+  color: #000;
+  display: flex;
+  flex-direction: column;
+  max-width: 560px;
+  padding: 40px;
+  text-align: center;
+  width: 100%;
+}
+
+.about-card__image {
+  aspect-ratio: 1 / 1;
+  border: 1px solid #000;
+  border-radius: 8px;
+  display: block;
+  margin-bottom: 32px;
+  max-width: 220px;
+  object-fit: cover;
+  width: 100%;
+}
+
+.about-card h2 {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.1;
+  margin: 0 0 18px;
+}
+
+.about-card p {
+  font-size: 17px;
+  line-height: 1.7;
+  margin: 0 0 28px;
+}
+
+.about-card__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+}
+
+.about-card__links a {
+  border: 1px solid #000;
+  border-radius: 999px;
+  color: #000;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 9px 16px;
+  text-decoration: none;
+}
+
 @media (max-width: 900px) {
   .hero-section {
     min-height: auto;

@@ -47,7 +47,25 @@ function App() {
           </div>
         </footer>
       </section>
-      <section id="sobre-nos" className="landing-section" aria-label="Sobre nos" />
+
+      <section id="sobre-nos" className="about-section" aria-label="Sobre nos">
+        <article className="about-card">
+          <img
+            className="about-card__image"
+            src="https://avatars.githubusercontent.com/u/83519960?v=4"
+            alt="Luiz Eduardo Camurca"
+          />
+          <h3>Luiz Eduardo Camurça</h3>
+          <p>
+            Estudante de Ciência da Computação na Universidade de Fortaleza. Atua principalmente em projetos web fullstack. Tem esperiência no desenvolvimento de sistemas privados para empresas.
+          </p>
+          <div className="about-card__links" aria-label="Links de contato">
+            <a href="mail.to:luizeduardo2099@edu.unifor.br">Email</a>
+            <a href="https://github.com/luizing">GitHub</a>
+            <a href="https://www.linkedin.com/in/luizeduardocamurca/">LinkedIn</a>
+          </div>
+        </article>
+      </section>
       <section id="anuncios" className="landing-section" aria-label="Anuncios" />
       <section
         id="estatisticas"
