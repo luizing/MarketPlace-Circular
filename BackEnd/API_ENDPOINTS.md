@@ -314,3 +314,23 @@ Corpo esperado:
 ```
 
 Credenciais validas retornam `200 OK` com os dados publicos do usuario. Credenciais invalidas retornam `401 Unauthorized`.
+
+## Estatisticas
+
+### Consultar estatisticas
+
+```http
+GET /api/estatisticas
+```
+
+Resposta esperada:
+
+```json
+{
+  "itensAnunciados": 12,
+  "alunosParticipando": 8,
+  "itensDisponiveis": 12
+}
+```
+
+`itensAnunciados` representa o total historico de anuncios criados e nao diminui quando um anuncio e apagado. Enquanto o modelo nao possui status de vendido, `itensDisponiveis` representa o total atual de anuncios cadastrados.

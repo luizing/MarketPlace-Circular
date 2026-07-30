@@ -743,6 +743,13 @@
   text-align: center;
 }
 
+.stats-section__error {
+  color: #a00000;
+  margin: 24px auto 0;
+  max-width: 1180px;
+  padding: 0 48px;
+}
+
 .login-page {
   align-items: center;
   box-sizing: border-box;

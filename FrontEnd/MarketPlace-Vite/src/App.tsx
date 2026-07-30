@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Anuncios from './Pages/Anuncios'
 import Login from './Pages/Login'
 import placeholderLanding from './assets/Landing pic.png'
@@ -6,11 +6,38 @@ import './App.css'
 
 const AUTH_STORAGE_KEY = 'marketplace-circular-authenticated'
 const USER_STORAGE_KEY = 'marketplace-circular-user'
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080'
+
+type Estatisticas = {
+  itensAnunciados: number
+  alunosParticipando: number
+  itensDisponiveis: number
+}
 
 function App() {
   const [estaLogado, setEstaLogado] = useState(
     () => window.localStorage.getItem(AUTH_STORAGE_KEY) === 'true',
   )
+  const [estatisticas, setEstatisticas] = useState<Estatisticas | null>(null)
+  const [erroEstatisticas, setErroEstatisticas] = useState(false)
+
+  useEffect(() => {
+    async function carregarEstatisticas() {
+      try {
+        const resposta = await fetch(`${apiBaseUrl}/api/estatisticas`)
+
+        if (!resposta.ok) {
+          throw new Error('Nao foi possivel carregar as estatisticas.')
+        }
+
+        setEstatisticas((await resposta.json()) as Estatisticas)
+      } catch {
+        setErroEstatisticas(true)
+      }
+    }
+
+    void carregarEstatisticas()
+  }, [])
 
   if (window.location.pathname === '/login') {
     return <Login />
@@ -111,18 +138,23 @@ function App() {
       >
         <div className="stats-section__content">
           <p>
-            <span>Numero de itens anunciados:</span>
-            <strong>128</strong>
+            <span>Número de itens anunciados:</span>
+            <strong>{estatisticas?.itensAnunciados ?? '-'}</strong>
           </p>
           <p>
-            <span>Numero de itens vendidos:</span>
-            <strong>42</strong>
+            <span>Número de itens disponiveis:</span>
+            <strong>{estatisticas?.itensDisponiveis ?? '-'}</strong>
           </p>
           <p>
-            <span>Numero de alunos participando:</span>
-            <strong>76</strong>
+            <span>Número de colegas participando:</span>
+            <strong>{estatisticas?.alunosParticipando ?? '-'}</strong>
           </p>
         </div>
+        {erroEstatisticas && (
+          <p className="stats-section__error" role="alert">
+            Nao foi possivel carregar as estatisticas no momento.
+          </p>
+        )}
       </section>
     </main>
   )

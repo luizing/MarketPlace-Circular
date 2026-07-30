@@ -5,7 +5,9 @@ import com.luizing.marktplaceCircular.dtos.AnuncioResponseDto;
 import com.luizing.marktplaceCircular.dtos.UserContatoDto;
 import com.luizing.marktplaceCircular.model.anuncio.Anuncio;
 import com.luizing.marktplaceCircular.model.anuncio.CategoriaAnuncio;
+import com.luizing.marktplaceCircular.model.estatistica.Estatistica;
 import com.luizing.marktplaceCircular.repository.AnuncioRepository;
+import com.luizing.marktplaceCircular.repository.EstatisticaRepository;
 import com.luizing.marktplaceCircular.repository.UserRepository;
 import java.util.List;
 import java.util.Optional;
@@ -19,12 +21,19 @@ public class AnuncioService {
 
     private final AnuncioRepository anuncioRepository;
     private final UserRepository userRepository;
+    private final EstatisticaRepository estatisticaRepository;
 
-    public AnuncioService(AnuncioRepository anuncioRepository, UserRepository userRepository) {
+    public AnuncioService(
+            AnuncioRepository anuncioRepository,
+            UserRepository userRepository,
+            EstatisticaRepository estatisticaRepository
+    ) {
         this.anuncioRepository = anuncioRepository;
         this.userRepository = userRepository;
+        this.estatisticaRepository = estatisticaRepository;
     }
 
+    @Transactional
     public Optional<AnuncioResponseDto> criar(AnuncioDto dto) {
         if (dto.usuarioId() == null || atingiuLimiteAnuncios(dto.usuarioId())) {
             return Optional.empty();
@@ -36,8 +45,28 @@ public class AnuncioService {
                 .map(usuario -> {
                     anuncio.setUsuario(usuario);
                     Anuncio anuncioCriado = anuncioRepository.save(anuncio);
+                    registrarAnuncioCriado();
                     return AnuncioResponseDto.fromAnuncio(anuncioCriado);
                 });
+    }
+
+    private void registrarAnuncioCriado() {
+        long anunciosAtuais = anuncioRepository.count();
+        Estatistica estatistica = estatisticaRepository
+                .findById(Estatistica.ID_PRINCIPAL)
+                .orElseGet(() -> {
+                    Estatistica novaEstatistica = new Estatistica();
+                    novaEstatistica.setTotalAnunciosCriados(anunciosAtuais);
+                    return novaEstatistica;
+                });
+
+        if (estatisticaRepository.existsById(Estatistica.ID_PRINCIPAL)) {
+            estatistica.setTotalAnunciosCriados(
+                    Math.max(estatistica.getTotalAnunciosCriados() + 1, anunciosAtuais)
+            );
+        }
+
+        estatisticaRepository.save(estatistica);
     }
 
     @Transactional(readOnly = true)
