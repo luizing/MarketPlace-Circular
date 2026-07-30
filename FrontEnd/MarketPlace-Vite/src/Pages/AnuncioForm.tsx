@@ -81,22 +81,34 @@ function AnuncioForm({ onClose, onCreated }: AnuncioFormProps) {
       })
 
       if (!resposta.ok) {
-        throw new Error('Nao foi possivel criar o anuncio.')
+        throw new Error(
+          resposta.status === 409
+            ? 'Cada usuario pode criar no maximo 3 anuncios.'
+            : 'Nao foi possivel criar o anuncio.',
+        )
       }
 
       const anuncioCriado = (await resposta.json()) as AnuncioCriado
       onCreated(anuncioCriado)
       onClose()
-    } catch {
-      setErro('Nao foi possivel salvar o anuncio no momento.')
+    } catch (error) {
+      setErro(
+        error instanceof Error
+          ? error.message
+          : 'Nao foi possivel salvar o anuncio no momento.',
+      )
     } finally {
       setEnviando(false)
     }
   }
 
   return (
-    <div className="ad-form-overlay" role="presentation">
-      <section className="ad-form-card" aria-label="Formulario de anuncio">
+    <div className="ad-form-overlay" role="presentation" onClick={onClose}>
+      <section
+        className="ad-form-card"
+        aria-label="Formulario de anuncio"
+        onClick={(event) => event.stopPropagation()}
+      >
         <div className="ad-form-card__header">
           <h2>Anunciar produto</h2>
           <button type="button" onClick={onClose} aria-label="Fechar formulario">

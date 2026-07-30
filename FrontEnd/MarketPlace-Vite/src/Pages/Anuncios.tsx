@@ -39,6 +39,18 @@ type Interessado = {
 const categorias: Categoria[] = ['Livros', 'Xerox', 'Calculadoras', 'Eletronicos']
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080'
 
+function obterColunasAnuncios() {
+  if (window.innerWidth <= 720) {
+    return 1
+  }
+
+  if (window.innerWidth <= 900) {
+    return 2
+  }
+
+  return 4
+}
+
 function formatarValor(produto: Produto) {
   if (produto.tipo === 'doacao') {
     return 'Doacao'
@@ -97,6 +109,8 @@ function Anuncios() {
   const [termoBusca, setTermoBusca] = useState('')
   const [categoriasSelecionadas, setCategoriasSelecionadas] = useState<Categoria[]>([])
   const [mostrarMeusAnuncios, setMostrarMeusAnuncios] = useState(false)
+  const [colunasAnuncios, setColunasAnuncios] = useState(obterColunasAnuncios)
+  const [paginaAtual, setPaginaAtual] = useState(0)
   const [formularioAberto, setFormularioAberto] = useState(false)
   const [produtoSelecionado, setProdutoSelecionado] = useState<Produto | null>(null)
   const [interessesDoUsuario, setInteressesDoUsuario] = useState<Record<number, boolean>>({})
@@ -109,6 +123,15 @@ function Anuncios() {
   const [apagandoId, setApagandoId] = useState<number | null>(null)
 
   const usuarioLogadoId = obterUsuarioLogadoId()
+
+  useEffect(() => {
+    function atualizarColunas() {
+      setColunasAnuncios(obterColunasAnuncios())
+    }
+
+    window.addEventListener('resize', atualizarColunas)
+    return () => window.removeEventListener('resize', atualizarColunas)
+  }, [])
 
   useEffect(() => {
     async function carregarAnuncios() {
@@ -210,6 +233,25 @@ function Anuncios() {
       return correspondeAoNome && correspondeACategoria
     })
   }, [produtos, termoBusca, categoriasSelecionadas])
+
+  const anunciosPorPagina = colunasAnuncios * 3
+  const totalPaginas = Math.ceil(produtosFiltrados.length / anunciosPorPagina)
+  const produtosVisiveis = useMemo(
+    () =>
+      produtosFiltrados.slice(
+        paginaAtual * anunciosPorPagina,
+        (paginaAtual + 1) * anunciosPorPagina,
+      ),
+    [produtosFiltrados, paginaAtual, anunciosPorPagina],
+  )
+
+  useEffect(() => {
+    setPaginaAtual(0)
+  }, [termoBusca, categoriasSelecionadas, mostrarMeusAnuncios, colunasAnuncios])
+
+  useEffect(() => {
+    setPaginaAtual((pagina) => Math.min(pagina, Math.max(totalPaginas - 1, 0)))
+  }, [totalPaginas])
 
   function alternarCategoria(categoria: Categoria) {
     setCategoriasSelecionadas((selecionadas) =>
@@ -316,11 +358,29 @@ function Anuncios() {
     }
   }
 
+  function mudarPagina(pagina: number) {
+    setPaginaAtual(pagina)
+    document.getElementById('anuncios')?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    })
+  }
+
   return (
     <section id="anuncios" className="ads-section" aria-label="Anuncios">
       <div className="ads-section__inner">
         <div className="ads-section__header">
-          <button type="button" onClick={() => setFormularioAberto(true)}>
+          <button
+            type="button"
+            onClick={() => {
+              if (usuarioLogadoId === null) {
+                window.location.href = '/login'
+                return
+              }
+
+              setFormularioAberto(true)
+            }}
+          >
             Anunciar produto
           </button>
         </div>
@@ -373,8 +433,9 @@ function Anuncios() {
         )}
 
         {!carregando && !erro && produtosFiltrados.length > 0 && (
-          <div className="ads-section__grid" aria-live="polite">
-            {produtosFiltrados.map((produto) => (
+          <>
+            <div className="ads-section__grid" aria-live="polite">
+            {produtosVisiveis.map((produto) => (
               <button
                 type="button"
                 className="product-card"
@@ -389,7 +450,24 @@ function Anuncios() {
                 </div>
               </button>
             ))}
-          </div>
+            </div>
+            <nav className="ads-pagination" aria-label="Paginação de anuncios">
+              <button
+                type="button"
+                disabled={paginaAtual === 0}
+                onClick={() => mudarPagina(paginaAtual - 1)}
+              >
+                Retornar
+              </button>
+              <button
+                type="button"
+                disabled={paginaAtual >= totalPaginas - 1}
+                onClick={() => mudarPagina(paginaAtual + 1)}
+              >
+                Avancar
+              </button>
+            </nav>
+          </>
         )}
       </div>
 
@@ -405,8 +483,20 @@ function Anuncios() {
       )}
 
       {anuncioInteressados && (
-        <div className="product-modal-overlay" role="presentation">
-          <section className="product-modal interested-modal" aria-label="Usuarios interessados">
+        <div
+          className="product-modal-overlay interested-modal-overlay"
+          role="presentation"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) {
+              setAnuncioInteressados(null)
+            }
+          }}
+        >
+          <section
+            className="product-modal interested-modal"
+            aria-label="Usuarios interessados"
+            onClick={(event) => event.stopPropagation()}
+          >
             <div className="product-modal__header">
               <h2>Interessados em {anuncioInteressados.nome}</h2>
               <button
@@ -426,7 +516,12 @@ function Anuncios() {
             {!carregandoInteressados && !erroInteressados && interessados.length > 0 && (
               <ul className="interested-modal__list">
                 {interessados.map((interessado) => (
-                  <li key={interessado.id}>{interessado.contato}</li>
+                  <li key={interessado.id}>
+                    <span className="interested-modal__email-icon" aria-hidden="true">
+                      ✉
+                    </span>
+                    <span>{interessado.contato}</span>
+                  </li>
                 ))}
               </ul>
             )}
@@ -435,8 +530,20 @@ function Anuncios() {
       )}
 
       {produtoSelecionado && (
-        <div className="product-modal-overlay" role="presentation">
-          <section className="product-modal" aria-label="Detalhes do produto">
+        <div
+          className="product-modal-overlay"
+          role="presentation"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) {
+              setProdutoSelecionado(null)
+            }
+          }}
+        >
+          <section
+            className="product-modal"
+            aria-label="Detalhes do produto"
+            onClick={(event) => event.stopPropagation()}
+          >
             <div className="product-modal__header">
               <h2>{produtoSelecionado.nome}</h2>
               <button

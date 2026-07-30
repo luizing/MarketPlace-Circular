@@ -49,6 +49,10 @@ Content-Type: application/json
 }
 ```
 
+O campo `usuarioId` e obrigatorio na criacao do anuncio. Se ele nao for informado ou nao existir, a API retorna `400 Bad Request`.
+
+Cada usuario pode possuir no maximo 3 anuncios. Uma quarta tentativa retorna `409 Conflict`.
+
 ### Listar anuncios
 
 ```http

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import Anuncios from './Pages/Anuncios'
 import Login from './Pages/Login'
-import placeholderLanding from './assets/PlaceHolder Landing.png'
+import placeholderLanding from './assets/Landing pic.png'
 import './App.css'
 
 const AUTH_STORAGE_KEY = 'marketplace-circular-authenticated'
@@ -26,7 +26,7 @@ function App() {
     <main className="landing-page" aria-label="Landing page">
       <header className="navbar">
         <a className="navbar__logo" href="#inicio" aria-label="MarketPlace-Circular">
-          Logo
+          MarketPlace Vortex
         </a>
 
         <nav className="navbar__links" aria-label="Navegacao principal">

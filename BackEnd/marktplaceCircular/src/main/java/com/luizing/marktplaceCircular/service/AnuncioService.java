@@ -15,6 +15,8 @@ import org.springframework.stereotype.Service;
 @Service
 public class AnuncioService {
 
+    public static final int LIMITE_ANUNCIOS_POR_USUARIO = 3;
+
     private final AnuncioRepository anuncioRepository;
     private final UserRepository userRepository;
 
@@ -23,15 +25,26 @@ public class AnuncioService {
         this.userRepository = userRepository;
     }
 
-    public AnuncioResponseDto criar(AnuncioDto dto) {
-        Anuncio anuncio = dto.toAnuncio();
-
-        if (dto.usuarioId() != null) {
-            userRepository.findById(dto.usuarioId()).ifPresent(anuncio::setUsuario);
+    public Optional<AnuncioResponseDto> criar(AnuncioDto dto) {
+        if (dto.usuarioId() == null || atingiuLimiteAnuncios(dto.usuarioId())) {
+            return Optional.empty();
         }
 
-        Anuncio anuncioCriado = anuncioRepository.save(anuncio);
-        return AnuncioResponseDto.fromAnuncio(anuncioCriado);
+        Anuncio anuncio = dto.toAnuncio();
+
+        return userRepository.findById(dto.usuarioId())
+                .map(usuario -> {
+                    anuncio.setUsuario(usuario);
+                    Anuncio anuncioCriado = anuncioRepository.save(anuncio);
+                    return AnuncioResponseDto.fromAnuncio(anuncioCriado);
+                });
+    }
+
+    @Transactional(readOnly = true)
+    public boolean atingiuLimiteAnuncios(Long usuarioId) {
+        return usuarioId != null
+                && anuncioRepository.countByUsuarioId(usuarioId)
+                >= LIMITE_ANUNCIOS_POR_USUARIO;
     }
 
     public List<AnuncioResponseDto> listar(String titulo, CategoriaAnuncio categoria) {

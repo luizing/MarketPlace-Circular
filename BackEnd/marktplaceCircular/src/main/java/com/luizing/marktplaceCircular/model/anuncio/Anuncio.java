@@ -40,8 +40,8 @@ public class Anuncio {
 
     private String imagem;
 
-    @ManyToOne
-    @JoinColumn(name = "usuario_id")
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "usuario_id", nullable = false)
     private User usuario;
 
     @ManyToMany(mappedBy = "itensInteressados")

@@ -31,8 +31,13 @@ public class AnuncioController {
 
     @PostMapping
     public ResponseEntity<AnuncioResponseDto> criar(@RequestBody AnuncioDto dto) {
-        AnuncioResponseDto anuncioCriado = anuncioService.criar(dto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(anuncioCriado);
+        if (anuncioService.atingiuLimiteAnuncios(dto.usuarioId())) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        }
+
+        return anuncioService.criar(dto)
+                .map(anuncio -> ResponseEntity.status(HttpStatus.CREATED).body(anuncio))
+                .orElseGet(() -> ResponseEntity.badRequest().build());
     }
 
     @GetMapping

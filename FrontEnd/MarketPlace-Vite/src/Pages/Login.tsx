@@ -16,6 +16,7 @@ function Login() {
   const [enviando, setEnviando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
   const [sucesso, setSucesso] = useState<string | null>(null)
+  const [loginInicial, setLoginInicial] = useState('')
 
   const entrar = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -87,6 +88,7 @@ function Login() {
         )
       }
 
+      setLoginInicial(payload.login)
       setCriandoConta(false)
       setSucesso('Conta criada com sucesso. Agora faca login.')
     } catch (error) {
@@ -114,7 +116,12 @@ function Login() {
 
               <label>
                 <span>Login</span>
-                <input type="text" name="login" autoComplete="username" required />
+                <input
+                  type="text"
+                  name="login"
+                  autoComplete="username"
+                  required
+                />
               </label>
 
               <label>
@@ -149,7 +156,13 @@ function Login() {
             <form className="login-card__form" onSubmit={entrar}>
               <label>
                 <span>Login</span>
-                <input type="text" name="login" autoComplete="username" required />
+                <input
+                  type="text"
+                  name="login"
+                  autoComplete="username"
+                  defaultValue={loginInicial}
+                  required
+                />
               </label>
 
               <label>
