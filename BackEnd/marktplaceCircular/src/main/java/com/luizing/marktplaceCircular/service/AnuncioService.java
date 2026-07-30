@@ -2,6 +2,7 @@ package com.luizing.marktplaceCircular.service;
 
 import com.luizing.marktplaceCircular.dtos.AnuncioDto;
 import com.luizing.marktplaceCircular.dtos.AnuncioResponseDto;
+import com.luizing.marktplaceCircular.dtos.UserContatoDto;
 import com.luizing.marktplaceCircular.model.anuncio.Anuncio;
 import com.luizing.marktplaceCircular.model.anuncio.CategoriaAnuncio;
 import com.luizing.marktplaceCircular.repository.AnuncioRepository;
@@ -23,7 +24,13 @@ public class AnuncioService {
     }
 
     public AnuncioResponseDto criar(AnuncioDto dto) {
-        Anuncio anuncioCriado = anuncioRepository.save(dto.toAnuncio());
+        Anuncio anuncio = dto.toAnuncio();
+
+        if (dto.usuarioId() != null) {
+            userRepository.findById(dto.usuarioId()).ifPresent(anuncio::setUsuario);
+        }
+
+        Anuncio anuncioCriado = anuncioRepository.save(anuncio);
         return AnuncioResponseDto.fromAnuncio(anuncioCriado);
     }
 
@@ -49,10 +56,21 @@ public class AnuncioService {
         return true;
     }
 
+    @Transactional(readOnly = true)
+    public Optional<List<UserContatoDto>> retornarInteressados(Long anuncioId) {
+        return anuncioRepository.findById(anuncioId)
+                .map(anuncio -> anuncio.getInteressados().stream()
+                        .map(usuario -> new UserContatoDto(
+                                usuario.getId(), usuario.getLogin(), usuario.getContato()))
+                        .toList());
+    }
+
     @Transactional
     public Optional<AnuncioResponseDto> interessar(Long anuncioId, Long usuarioId) {
         return anuncioRepository.findById(anuncioId)
                 .flatMap(anuncio -> userRepository.findById(usuarioId)
+                        .filter(usuario -> anuncio.getUsuario() == null
+                                || !anuncio.getUsuario().getId().equals(usuario.getId()))
                         .map(usuario -> {
                             if (!usuario.getItensInteressados().contains(anuncio)) {
                                 usuario.getItensInteressados().add(anuncio);
@@ -60,6 +78,14 @@ public class AnuncioService {
                             }
                             return AnuncioResponseDto.fromAnuncio(anuncio);
                         }));
+    }
+
+    @Transactional(readOnly = true)
+    public boolean usuarioEhDono(Long anuncioId, Long usuarioId) {
+        return anuncioRepository.findById(anuncioId)
+                .map(anuncio -> anuncio.getUsuario() != null
+                        && anuncio.getUsuario().getId().equals(usuarioId))
+                .orElse(false);
     }
 
     @Transactional

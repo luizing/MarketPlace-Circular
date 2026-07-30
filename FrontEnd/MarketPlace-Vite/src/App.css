@@ -296,6 +296,21 @@
   accent-color: #000;
 }
 
+.ads-section__my-ads {
+  align-items: center;
+  border: 1px solid #000;
+  border-radius: 999px;
+  display: flex;
+  gap: 8px;
+  margin-top: 24px;
+  padding: 10px 14px;
+  width: fit-content;
+}
+
+.ads-section__my-ads input {
+  accent-color: #000;
+}
+
 .ads-section__grid {
   display: grid;
   gap: 24px;
@@ -368,6 +383,45 @@
   font-size: 13px;
   font-weight: 700;
   padding: 6px 12px;
+}
+
+.product-card--owner {
+  cursor: default;
+}
+
+.product-card__owner-count {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 18px 0 0;
+}
+
+.product-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.product-card__actions button {
+  background: #fff;
+  border: 1px solid #000;
+  border-radius: 999px;
+  color: #000;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 9px 12px;
+}
+
+.product-card__actions .product-card__delete {
+  background: #000;
+  color: #fff;
+}
+
+.product-card__actions button:disabled {
+  cursor: wait;
+  opacity: 0.6;
 }
 
 .product-modal-overlay {
@@ -479,6 +533,19 @@
 .product-modal__interest-button:disabled {
   cursor: wait;
   opacity: 0.6;
+}
+
+.interested-modal__list {
+  display: grid;
+  gap: 12px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.interested-modal__list li {
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 12px;
 }
 
 .ad-form-overlay {

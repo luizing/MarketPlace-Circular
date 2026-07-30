@@ -11,7 +11,8 @@ type AnuncioCriado = {
   tipo: ApiTipoAnuncio
   preco: number
   imagem: string
-  interessados?: number
+  usuarioId?: number
+  interessados: number
 }
 
 type AnuncioFormProps = {
@@ -20,6 +21,21 @@ type AnuncioFormProps = {
 }
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080'
+
+function obterUsuarioLogadoId() {
+  const usuarioSalvo = window.localStorage.getItem('marketplace-circular-user')
+
+  if (!usuarioSalvo) {
+    return null
+  }
+
+  try {
+    const usuario = JSON.parse(usuarioSalvo) as { id?: number }
+    return typeof usuario.id === 'number' ? usuario.id : null
+  } catch {
+    return null
+  }
+}
 
 const categorias: Array<{ label: string; value: ApiCategoria }> = [
   { label: 'Livros', value: 'LIVROS' },
@@ -52,6 +68,7 @@ function AnuncioForm({ onClose, onCreated }: AnuncioFormProps) {
       tipo,
       preco: tipo === 'DOACAO' ? 0 : precoInformado,
       imagem: obterTexto(formData, 'imagem'),
+      usuarioId: obterUsuarioLogadoId(),
     }
 
     try {

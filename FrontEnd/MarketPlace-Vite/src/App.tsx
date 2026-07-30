@@ -5,6 +5,7 @@ import placeholderLanding from './assets/PlaceHolder Landing.png'
 import './App.css'
 
 const AUTH_STORAGE_KEY = 'marketplace-circular-authenticated'
+const USER_STORAGE_KEY = 'marketplace-circular-user'
 
 function App() {
   const [estaLogado, setEstaLogado] = useState(
@@ -17,6 +18,7 @@ function App() {
 
   const sair = () => {
     window.localStorage.removeItem(AUTH_STORAGE_KEY)
+    window.localStorage.removeItem(USER_STORAGE_KEY)
     setEstaLogado(false)
   }
 

@@ -2,6 +2,7 @@ package com.luizing.marktplaceCircular.controller;
 
 import com.luizing.marktplaceCircular.dtos.AnuncioDto;
 import com.luizing.marktplaceCircular.dtos.AnuncioResponseDto;
+import com.luizing.marktplaceCircular.dtos.UserContatoDto;
 import com.luizing.marktplaceCircular.model.anuncio.CategoriaAnuncio;
 import com.luizing.marktplaceCircular.service.AnuncioService;
 import java.util.List;
@@ -51,7 +52,16 @@ public class AnuncioController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletar(@PathVariable Long id) {
+    public ResponseEntity<Void> deletar(
+            @PathVariable Long id,
+            @RequestParam Long usuarioId
+    ) {
+        if (!anuncioService.usuarioEhDono(id, usuarioId)) {
+            return anuncioService.buscarPorId(id).isPresent()
+                    ? ResponseEntity.status(HttpStatus.FORBIDDEN).build()
+                    : ResponseEntity.notFound().build();
+        }
+
         boolean anuncioRemovido = anuncioService.deletar(id);
 
         if (!anuncioRemovido) {
@@ -61,11 +71,31 @@ public class AnuncioController {
         return ResponseEntity.noContent().build();
     }
 
+    @GetMapping("/{anuncioId}/interessados")
+    public ResponseEntity<List<UserContatoDto>> retornarInteressados(
+            @PathVariable Long anuncioId,
+            @RequestParam Long usuarioId
+    ) {
+        if (!anuncioService.usuarioEhDono(anuncioId, usuarioId)) {
+            return anuncioService.buscarPorId(anuncioId).isPresent()
+                    ? ResponseEntity.status(HttpStatus.FORBIDDEN).build()
+                    : ResponseEntity.notFound().build();
+        }
+
+        return anuncioService.retornarInteressados(anuncioId)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
     @PostMapping("/{anuncioId}/interessados/{usuarioId}")
     public ResponseEntity<AnuncioResponseDto> interessar(
             @PathVariable Long anuncioId,
             @PathVariable Long usuarioId
     ) {
+        if (anuncioService.usuarioEhDono(anuncioId, usuarioId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
         return anuncioService.interessar(anuncioId, usuarioId)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());

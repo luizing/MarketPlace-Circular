@@ -24,7 +24,8 @@ Corpo esperado:
   "categoria": "LIVROS",
   "tipo": "VENDA",
   "preco": 45.0,
-  "imagem": "https://exemplo.com/imagem.jpg"
+  "imagem": "https://exemplo.com/imagem.jpg",
+  "usuarioId": 1
 }
 ```
 
@@ -150,6 +151,8 @@ POST /api/anuncios/{anuncioId}/interessados/{usuarioId}
 
 Adiciona o usuario a lista de interessados do anuncio. Se ele ja estiver na lista, a operacao nao duplica o registro.
 
+O dono do anuncio nao pode demonstrar interesse no proprio anuncio. Nesse caso, a API retorna `403 Forbidden`.
+
 Resposta esperada:
 
 ```http
@@ -192,10 +195,12 @@ Resposta esperada quando o anuncio nao existe:
 ### Deletar anuncio
 
 ```http
-DELETE /api/anuncios/{id}
+DELETE /api/anuncios/{id}?usuarioId={usuarioId}
 ```
 
-Resposta esperada quando o anuncio existe:
+O `usuarioId` deve ser o dono do anuncio.
+
+Resposta esperada quando o anuncio existe e pertence ao usuario:
 
 ```http
 204 No Content
@@ -207,12 +212,46 @@ Resposta esperada quando o anuncio nao existe:
 404 Not Found
 ```
 
+Resposta esperada quando o usuario nao e o dono:
+
+```http
+403 Forbidden
+```
+
+### Listar interessados de um anuncio
+
+```http
+GET /api/anuncios/{id}/interessados?usuarioId={usuarioId}
+```
+
+O `usuarioId` deve ser o dono do anuncio.
+
+Resposta esperada:
+
+```json
+[
+  {
+    "id": 2,
+    "login": "aluno123",
+    "contato": "aluno@example.com"
+  }
+]
+```
+
 ## Observacoes
 
 - A API trafega dados em JSON.
 - Os endpoints de anuncio usam DTOs na entrada e na saida.
 - Autenticacao e autorizacao ainda nao foram implementadas nesta etapa.
 - Quando a autenticacao for implementada, criacao e delecao de anuncios deverao exigir usuario autenticado.
+
+### Listar anuncios do usuario
+
+```http
+GET /api/users/{id}/anuncios
+```
+
+Retorna apenas os anuncios associados ao usuario informado.
 
 ## Usuarios
 

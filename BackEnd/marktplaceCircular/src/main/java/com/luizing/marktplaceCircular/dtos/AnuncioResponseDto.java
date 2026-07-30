@@ -12,6 +12,7 @@ public record AnuncioResponseDto(
         TipoAnuncio tipo,
         double preco,
         String imagem,
+        Long usuarioId,
         int interessados
 ) {
 
@@ -24,6 +25,7 @@ public record AnuncioResponseDto(
                 anuncio.getTipo(),
                 anuncio.getPreco(),
                 anuncio.getImagem(),
+                anuncio.getUsuario() == null ? null : anuncio.getUsuario().getId(),
                 anuncio.getInteressados().size()
         );
     }

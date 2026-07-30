@@ -14,7 +14,8 @@ type ApiAnuncio = {
   tipo: ApiTipoAnuncio
   preco: number
   imagem: string
-  interessados?: number
+  usuarioId?: number
+  interessados: number
 }
 
 type Produto = {
@@ -25,7 +26,14 @@ type Produto = {
   tipo: TipoAnuncio
   valor?: number
   imagem: string
+  usuarioId?: number
   interessados: number
+}
+
+type Interessado = {
+  id: number
+  login: string
+  contato: string
 }
 
 const categorias: Categoria[] = ['Livros', 'Xerox', 'Calculadoras', 'Eletronicos']
@@ -62,7 +70,8 @@ function mapearAnuncio(anuncio: ApiAnuncio): Produto {
     tipo: anuncio.tipo === 'DOACAO' ? 'doacao' : 'venda',
     valor: anuncio.preco,
     imagem: anuncio.imagem,
-    interessados: anuncio.interessados ?? 0,
+    usuarioId: anuncio.usuarioId,
+    interessados: anuncio.interessados,
   }
 }
 
@@ -87,14 +96,19 @@ function Anuncios() {
   const [erro, setErro] = useState<string | null>(null)
   const [termoBusca, setTermoBusca] = useState('')
   const [categoriasSelecionadas, setCategoriasSelecionadas] = useState<Categoria[]>([])
+  const [mostrarMeusAnuncios, setMostrarMeusAnuncios] = useState(false)
   const [formularioAberto, setFormularioAberto] = useState(false)
   const [produtoSelecionado, setProdutoSelecionado] = useState<Produto | null>(null)
-  const [interessadosPorProduto, setInteressadosPorProduto] = useState<
-    Record<number, number>
-  >({})
   const [interessesDoUsuario, setInteressesDoUsuario] = useState<Record<number, boolean>>({})
   const [carregandoInteresse, setCarregandoInteresse] = useState(false)
   const [erroInteresse, setErroInteresse] = useState<string | null>(null)
+  const [anuncioInteressados, setAnuncioInteressados] = useState<Produto | null>(null)
+  const [interessados, setInteressados] = useState<Interessado[]>([])
+  const [carregandoInteressados, setCarregandoInteressados] = useState(false)
+  const [erroInteressados, setErroInteressados] = useState<string | null>(null)
+  const [apagandoId, setApagandoId] = useState<number | null>(null)
+
+  const usuarioLogadoId = obterUsuarioLogadoId()
 
   useEffect(() => {
     async function carregarAnuncios() {
@@ -102,7 +116,11 @@ function Anuncios() {
         setCarregando(true)
         setErro(null)
 
-        const resposta = await fetch(`${apiBaseUrl}/api/anuncios`)
+        const endpoint =
+          mostrarMeusAnuncios && usuarioLogadoId !== null
+            ? `${apiBaseUrl}/api/users/${usuarioLogadoId}/anuncios`
+            : `${apiBaseUrl}/api/anuncios`
+        const resposta = await fetch(endpoint)
 
         if (!resposta.ok) {
           throw new Error('Nao foi possivel carregar os anuncios.')
@@ -112,12 +130,6 @@ function Anuncios() {
         const produtosMapeados = anuncios.map(mapearAnuncio)
 
         setProdutos(produtosMapeados)
-        setInteressadosPorProduto((interessadosAtuais) => ({
-          ...Object.fromEntries(
-            produtosMapeados.map((produto) => [produto.id, produto.interessados]),
-          ),
-          ...interessadosAtuais,
-        }))
       } catch {
         setErro('Nao foi possivel carregar os anuncios no momento.')
       } finally {
@@ -126,7 +138,7 @@ function Anuncios() {
     }
 
     void carregarAnuncios()
-  }, [])
+  }, [mostrarMeusAnuncios, usuarioLogadoId])
 
   useEffect(() => {
     if (!produtoSelecionado) {
@@ -232,10 +244,13 @@ function Anuncios() {
       }
 
       const anuncioAtualizado = (await resposta.json()) as ApiAnuncio
-      setInteressadosPorProduto((interessadosAtuais) => ({
-        ...interessadosAtuais,
-        [produtoId]: anuncioAtualizado.interessados ?? interessadosAtuais[produtoId] ?? 0,
-      }))
+      setProdutos((produtosAtuais) =>
+        produtosAtuais.map((produto) =>
+          produto.id === produtoId
+            ? { ...produto, interessados: anuncioAtualizado.interessados }
+            : produto,
+        ),
+      )
       setInteressesDoUsuario((interessesAtuais) => ({
         ...interessesAtuais,
         [produtoId]: !estaInteressado,
@@ -244,6 +259,60 @@ function Anuncios() {
       setErroInteresse('Nao foi possivel atualizar seu interesse no momento.')
     } finally {
       setCarregandoInteresse(false)
+    }
+  }
+
+  async function apagarAnuncio(produtoId: number) {
+    if (usuarioLogadoId === null) {
+      return
+    }
+
+    setApagandoId(produtoId)
+    setErro(null)
+
+    try {
+      const resposta = await fetch(
+        `${apiBaseUrl}/api/anuncios/${produtoId}?usuarioId=${usuarioLogadoId}`,
+        { method: 'DELETE' },
+      )
+
+      if (!resposta.ok) {
+        throw new Error('Nao foi possivel apagar o anuncio.')
+      }
+
+      setProdutos((produtosAtuais) =>
+        produtosAtuais.filter((produto) => produto.id !== produtoId),
+      )
+      if (produtoSelecionado?.id === produtoId) {
+        setProdutoSelecionado(null)
+      }
+    } catch {
+      setErro('Nao foi possivel apagar o anuncio no momento.')
+    } finally {
+      setApagandoId(null)
+    }
+  }
+
+  async function mostrarInteressados(produto: Produto) {
+    setAnuncioInteressados(produto)
+    setInteressados([])
+    setErroInteressados(null)
+    setCarregandoInteressados(true)
+
+    try {
+      const resposta = await fetch(
+        `${apiBaseUrl}/api/anuncios/${produto.id}/interessados?usuarioId=${usuarioLogadoId}`,
+      )
+
+      if (!resposta.ok) {
+        throw new Error('Nao foi possivel carregar os interessados.')
+      }
+
+      setInteressados((await resposta.json()) as Interessado[])
+    } catch {
+      setErroInteressados('Nao foi possivel carregar os interessados no momento.')
+    } finally {
+      setCarregandoInteressados(false)
     }
   }
 
@@ -282,6 +351,17 @@ function Anuncios() {
               ))}
             </div>
           </fieldset>
+
+          {usuarioLogadoId !== null && (
+            <label className="ads-section__my-ads">
+              <input
+                type="checkbox"
+                checked={mostrarMeusAnuncios}
+                onChange={(event) => setMostrarMeusAnuncios(event.target.checked)}
+              />
+              <span>Meus Anuncios</span>
+            </label>
+          )}
         </div>
 
         {carregando && <p className="ads-section__status">Carregando anuncios...</p>}
@@ -320,12 +400,38 @@ function Anuncios() {
             const produtoCriado = mapearAnuncio(anuncio)
 
             setProdutos((produtosAtuais) => [produtoCriado, ...produtosAtuais])
-            setInteressadosPorProduto((interessadosAtuais) => ({
-              ...interessadosAtuais,
-              [produtoCriado.id]: produtoCriado.interessados,
-            }))
           }}
         />
+      )}
+
+      {anuncioInteressados && (
+        <div className="product-modal-overlay" role="presentation">
+          <section className="product-modal interested-modal" aria-label="Usuarios interessados">
+            <div className="product-modal__header">
+              <h2>Interessados em {anuncioInteressados.nome}</h2>
+              <button
+                type="button"
+                onClick={() => setAnuncioInteressados(null)}
+                aria-label="Fechar lista de interessados"
+              >
+                Fechar
+              </button>
+            </div>
+
+            {carregandoInteressados && <p>Carregando interessados...</p>}
+            {erroInteressados && <p className="product-modal__interest-error">{erroInteressados}</p>}
+            {!carregandoInteressados && !erroInteressados && interessados.length === 0 && (
+              <p>Nenhum usuario demonstrou interesse ainda.</p>
+            )}
+            {!carregandoInteressados && !erroInteressados && interessados.length > 0 && (
+              <ul className="interested-modal__list">
+                {interessados.map((interessado) => (
+                  <li key={interessado.id}>{interessado.contato}</li>
+                ))}
+              </ul>
+            )}
+          </section>
+        </div>
       )}
 
       {produtoSelecionado && (
@@ -350,25 +456,50 @@ function Anuncios() {
               </span>
               <p>{produtoSelecionado.descricao}</p>
               <strong>{formatarValor(produtoSelecionado)}</strong>
-              <p className="product-modal__interest-count">
-                Usuarios interessados:{' '}
-                {interessadosPorProduto[produtoSelecionado.id] ?? 0}
-              </p>
-              {erroInteresse && (
-                <p className="product-modal__interest-error" role="alert">
-                  {erroInteresse}
-                </p>
+              {usuarioLogadoId !== null &&
+              produtoSelecionado.usuarioId === usuarioLogadoId ? (
+                <>
+                  <p className="product-modal__interest-count">
+                    {produtoSelecionado.interessados} usuario(s) marcaram interesse
+                  </p>
+                  <div className="product-card__actions">
+                    <button
+                      type="button"
+                      onClick={() => void mostrarInteressados(produtoSelecionado)}
+                    >
+                      mostrar interessados
+                    </button>
+                    <button
+                      type="button"
+                      className="product-card__delete"
+                      disabled={apagandoId === produtoSelecionado.id}
+                      onClick={() => void apagarAnuncio(produtoSelecionado.id)}
+                    >
+                      {apagandoId === produtoSelecionado.id
+                        ? 'Apagando...'
+                        : 'Apagar anuncio'}
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {erroInteresse && (
+                    <p className="product-modal__interest-error" role="alert">
+                      {erroInteresse}
+                    </p>
+                  )}
+                  <button
+                    type="button"
+                    className="product-modal__interest-button"
+                    disabled={carregandoInteresse}
+                    onClick={() => void alternarInteresse(produtoSelecionado.id)}
+                  >
+                    {interessesDoUsuario[produtoSelecionado.id]
+                      ? 'desinteressei'
+                      : 'me interessei'}
+                  </button>
+                </>
               )}
-              <button
-                type="button"
-                className="product-modal__interest-button"
-                disabled={carregandoInteresse}
-                onClick={() => void alternarInteresse(produtoSelecionado.id)}
-              >
-                {interessesDoUsuario[produtoSelecionado.id]
-                  ? 'desinteressei'
-                  : 'me interessei'}
-              </button>
             </div>
           </section>
         </div>

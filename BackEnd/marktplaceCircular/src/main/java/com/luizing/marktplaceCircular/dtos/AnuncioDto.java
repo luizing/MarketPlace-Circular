@@ -10,7 +10,8 @@ public record AnuncioDto(
         CategoriaAnuncio categoria,
         TipoAnuncio tipo,
         double preco,
-        String imagem
+        String imagem,
+        Long usuarioId
 ) {
 
     public Anuncio toAnuncio() {
