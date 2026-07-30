@@ -1,8 +1,8 @@
 package com.luizing.marktplaceCircular.dtos;
 
-import com.luizing.marktplaceCircular.model.Anuncio;
-import com.luizing.marktplaceCircular.model.CategoriaAnuncio;
-import com.luizing.marktplaceCircular.model.TipoAnuncio;
+import com.luizing.marktplaceCircular.model.anuncio.Anuncio;
+import com.luizing.marktplaceCircular.model.anuncio.CategoriaAnuncio;
+import com.luizing.marktplaceCircular.model.anuncio.TipoAnuncio;
 
 public record AnuncioResponseDto(
         Long id,
@@ -11,7 +11,8 @@ public record AnuncioResponseDto(
         CategoriaAnuncio categoria,
         TipoAnuncio tipo,
         double preco,
-        String imagem
+        String imagem,
+        int interessados
 ) {
 
     public static AnuncioResponseDto fromAnuncio(Anuncio anuncio) {
@@ -22,7 +23,8 @@ public record AnuncioResponseDto(
                 anuncio.getCategoria(),
                 anuncio.getTipo(),
                 anuncio.getPreco(),
-                anuncio.getImagem()
+                anuncio.getImagem(),
+                anuncio.getInteressados().size()
         );
     }
 }

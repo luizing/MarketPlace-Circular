@@ -1,10 +1,82 @@
-type AnuncioFormProps = {
-  onClose: () => void
+import { useState } from 'react'
+
+type ApiCategoria = 'LIVROS' | 'XEROX' | 'CALCULADORAS' | 'ELETRONICOS'
+type ApiTipoAnuncio = 'VENDA' | 'DOACAO'
+
+type AnuncioCriado = {
+  id: number
+  titulo: string
+  descricao: string
+  categoria: ApiCategoria
+  tipo: ApiTipoAnuncio
+  preco: number
+  imagem: string
+  interessados?: number
 }
 
-const categorias = ['Livros', 'Xerox', 'Calculadoras', 'Eletronicos']
+type AnuncioFormProps = {
+  onClose: () => void
+  onCreated: (anuncio: AnuncioCriado) => void
+}
 
-function AnuncioForm({ onClose }: AnuncioFormProps) {
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080'
+
+const categorias: Array<{ label: string; value: ApiCategoria }> = [
+  { label: 'Livros', value: 'LIVROS' },
+  { label: 'Xerox', value: 'XEROX' },
+  { label: 'Calculadoras', value: 'CALCULADORAS' },
+  { label: 'Eletronicos', value: 'ELETRONICOS' },
+]
+
+function obterTexto(formData: FormData, campo: string) {
+  return String(formData.get(campo) ?? '').trim()
+}
+
+function AnuncioForm({ onClose, onCreated }: AnuncioFormProps) {
+  const [enviando, setEnviando] = useState(false)
+  const [erro, setErro] = useState<string | null>(null)
+
+  async function criarAnuncio(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setEnviando(true)
+    setErro(null)
+
+    const formData = new FormData(event.currentTarget)
+    const precoInformado = Number(formData.get('preco') ?? 0)
+    const tipo = obterTexto(formData, 'tipo') as ApiTipoAnuncio
+
+    const payload = {
+      titulo: obterTexto(formData, 'titulo'),
+      descricao: obterTexto(formData, 'descricao'),
+      categoria: obterTexto(formData, 'categoria') as ApiCategoria,
+      tipo,
+      preco: tipo === 'DOACAO' ? 0 : precoInformado,
+      imagem: obterTexto(formData, 'imagem'),
+    }
+
+    try {
+      const resposta = await fetch(`${apiBaseUrl}/api/anuncios`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      })
+
+      if (!resposta.ok) {
+        throw new Error('Nao foi possivel criar o anuncio.')
+      }
+
+      const anuncioCriado = (await resposta.json()) as AnuncioCriado
+      onCreated(anuncioCriado)
+      onClose()
+    } catch {
+      setErro('Nao foi possivel salvar o anuncio no momento.')
+    } finally {
+      setEnviando(false)
+    }
+  }
+
   return (
     <div className="ad-form-overlay" role="presentation">
       <section className="ad-form-card" aria-label="Formulario de anuncio">
@@ -17,10 +89,7 @@ function AnuncioForm({ onClose }: AnuncioFormProps) {
 
         <form
           className="ad-form-card__form"
-          onSubmit={(event) => {
-            event.preventDefault()
-            onClose()
-          }}
+          onSubmit={criarAnuncio}
         >
           <label>
             <span>Titulo</span>
@@ -39,8 +108,8 @@ function AnuncioForm({ onClose }: AnuncioFormProps) {
                 Selecione uma categoria
               </option>
               {categorias.map((categoria) => (
-                <option key={categoria} value={categoria}>
-                  {categoria}
+                <option key={categoria.value} value={categoria.value}>
+                  {categoria.label}
                 </option>
               ))}
             </select>
@@ -48,9 +117,9 @@ function AnuncioForm({ onClose }: AnuncioFormProps) {
 
           <label>
             <span>Tipo</span>
-            <select name="tipo" required defaultValue="venda">
-              <option value="venda">Venda</option>
-              <option value="doacao">Doacao</option>
+            <select name="tipo" required defaultValue="VENDA">
+              <option value="VENDA">Venda</option>
+              <option value="DOACAO">Doacao</option>
             </select>
           </label>
 
@@ -64,7 +133,11 @@ function AnuncioForm({ onClose }: AnuncioFormProps) {
             <input type="url" name="imagem" required />
           </label>
 
-          <button type="submit">Salvar anuncio</button>
+          {erro && <p className="ad-form-card__error">{erro}</p>}
+
+          <button type="submit" disabled={enviando}>
+            {enviando ? 'Salvando...' : 'Salvar anuncio'}
+          </button>
         </form>
       </section>
     </div>

@@ -2,20 +2,24 @@ package com.luizing.marktplaceCircular.service;
 
 import com.luizing.marktplaceCircular.dtos.AnuncioDto;
 import com.luizing.marktplaceCircular.dtos.AnuncioResponseDto;
-import com.luizing.marktplaceCircular.model.Anuncio;
-import com.luizing.marktplaceCircular.model.CategoriaAnuncio;
+import com.luizing.marktplaceCircular.model.anuncio.Anuncio;
+import com.luizing.marktplaceCircular.model.anuncio.CategoriaAnuncio;
 import com.luizing.marktplaceCircular.repository.AnuncioRepository;
+import com.luizing.marktplaceCircular.repository.UserRepository;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 
 @Service
 public class AnuncioService {
 
     private final AnuncioRepository anuncioRepository;
+    private final UserRepository userRepository;
 
-    public AnuncioService(AnuncioRepository anuncioRepository) {
+    public AnuncioService(AnuncioRepository anuncioRepository, UserRepository userRepository) {
         this.anuncioRepository = anuncioRepository;
+        this.userRepository = userRepository;
     }
 
     public AnuncioResponseDto criar(AnuncioDto dto) {
@@ -44,6 +48,38 @@ public class AnuncioService {
         anuncioRepository.deleteById(id);
         return true;
     }
+
+    @Transactional
+    public Optional<AnuncioResponseDto> interessar(Long anuncioId, Long usuarioId) {
+        return anuncioRepository.findById(anuncioId)
+                .flatMap(anuncio -> userRepository.findById(usuarioId)
+                        .map(usuario -> {
+                            if (!usuario.getItensInteressados().contains(anuncio)) {
+                                usuario.getItensInteressados().add(anuncio);
+                                userRepository.save(usuario);
+                            }
+                            return AnuncioResponseDto.fromAnuncio(anuncio);
+                        }));
+    }
+
+    @Transactional
+    public Optional<AnuncioResponseDto> desinteressar(Long anuncioId, Long usuarioId) {
+        return anuncioRepository.findById(anuncioId)
+                .flatMap(anuncio -> userRepository.findById(usuarioId)
+                        .map(usuario -> {
+                            usuario.getItensInteressados().remove(anuncio);
+                            userRepository.save(usuario);
+                            return AnuncioResponseDto.fromAnuncio(anuncio);
+                        }));
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<Boolean> verificarInteresse(Long anuncioId, Long usuarioId) {
+        return anuncioRepository.findById(anuncioId)
+                .flatMap(anuncio -> userRepository.findById(usuarioId)
+                        .map(usuario -> usuario.getItensInteressados().contains(anuncio)));
+    }
+
 
     private boolean contemTitulo(Anuncio anuncio, String titulo) {
         return anuncio.getTitulo() != null

@@ -1,11 +1,23 @@
+import { useState } from 'react'
 import Anuncios from './Pages/Anuncios'
 import Login from './Pages/Login'
 import placeholderLanding from './assets/PlaceHolder Landing.png'
 import './App.css'
 
+const AUTH_STORAGE_KEY = 'marketplace-circular-authenticated'
+
 function App() {
+  const [estaLogado, setEstaLogado] = useState(
+    () => window.localStorage.getItem(AUTH_STORAGE_KEY) === 'true',
+  )
+
   if (window.location.pathname === '/login') {
     return <Login />
+  }
+
+  const sair = () => {
+    window.localStorage.removeItem(AUTH_STORAGE_KEY)
+    setEstaLogado(false)
   }
 
   return (
@@ -19,9 +31,15 @@ function App() {
           <a href="#sobre-nos">Sobre nos</a>
           <a href="#anuncios">Anuncios</a>
           <a href="#estatisticas">Estatisticas</a>
-          <a className="navbar__login" href="/login">
-            Login
-          </a>
+          {estaLogado ? (
+            <button className="navbar__login navbar__logout" type="button" onClick={sair}>
+              Sair
+            </button>
+          ) : (
+            <a className="navbar__login" href="/login">
+              Login
+            </a>
+          )}
         </nav>
       </header>
 
@@ -48,13 +66,19 @@ function App() {
 
         <footer className="hero-section__footer" aria-label="Logos parceiras">
           <div className="hero-section__logo-slot">
+            <a href='https://unifor.br/'>
             <img src="/Unifor_logo.svg.webp" alt="Unifor" />
+            </a>
           </div>
           <div className="hero-section__logo-slot">
+            <a href='https://vortex.unifor.br/'>
             <img src="/VORTEX.png" alt="Vortex" />
+            </a>
           </div>
           <div className="hero-section__logo-slot">
+            <a href='https://github.com/luizing'>
             <img src="/luizing.png" alt="Luizing" />
+            </a>
           </div>
         </footer>
       </section>

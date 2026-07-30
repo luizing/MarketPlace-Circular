@@ -1,8 +1,8 @@
 package com.luizing.marktplaceCircular.dtos;
 
-import com.luizing.marktplaceCircular.model.Anuncio;
-import com.luizing.marktplaceCircular.model.CategoriaAnuncio;
-import com.luizing.marktplaceCircular.model.TipoAnuncio;
+import com.luizing.marktplaceCircular.model.anuncio.Anuncio;
+import com.luizing.marktplaceCircular.model.anuncio.CategoriaAnuncio;
+import com.luizing.marktplaceCircular.model.anuncio.TipoAnuncio;
 
 public record AnuncioDto(
         String titulo,
