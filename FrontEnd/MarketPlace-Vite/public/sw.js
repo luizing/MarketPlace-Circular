@@ -1,5 +1,12 @@
-const CACHE_NAME = 'marketplace-circular-v1'
-const APP_SHELL = ['/', '/index.html', '/icon.png', '/favicon.svg', '/manifest.json']
+const CACHE_NAME = 'marketplace-circular-v2'
+const APP_SHELL = [
+  '/',
+  '/index.html',
+  '/icon-192.png',
+  '/icon-512.png',
+  '/favicon.svg',
+  '/manifest.json',
+]
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
