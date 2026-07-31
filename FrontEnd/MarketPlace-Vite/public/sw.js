@@ -1,4 +1,4 @@
-const CACHE_NAME = 'marketplace-circular-v3'
+const CACHE_NAME = 'marketplace-circular-v4'
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -47,6 +47,30 @@ self.addEventListener('fetch', (event) => {
           caches.match(event.request).then(
             (cachedResponse) =>
               cachedResponse ?? new Response('Recurso indisponivel offline.', { status: 503 }),
+          ),
+        ),
+    )
+    return
+  }
+
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          const responseCopy = response.clone()
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseCopy))
+          return response
+        })
+        .catch(() =>
+          caches.match(event.request).then(
+            (cachedResponse) =>
+              cachedResponse ??
+              caches
+                .match('/index.html')
+                .then(
+                  (appShell) =>
+                    appShell ?? new Response('Aplicacao indisponivel offline.', { status: 503 }),
+                ),
           ),
         ),
     )
