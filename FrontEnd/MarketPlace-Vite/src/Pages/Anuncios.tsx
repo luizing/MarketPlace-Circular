@@ -150,6 +150,7 @@ function Anuncios() {
   const [colunasAnuncios, setColunasAnuncios] = useState(obterColunasAnuncios)
   const [paginaAtual, setPaginaAtual] = useState(0)
   const [totalPaginas, setTotalPaginas] = useState(0)
+  const [totalItens, setTotalItens] = useState(0)
   const [atualizacao, setAtualizacao] = useState(0)
   const [formularioAberto, setFormularioAberto] = useState(false)
   const [produtoSelecionado, setProdutoSelecionado] = useState<Produto | null>(null)
@@ -209,6 +210,7 @@ function Anuncios() {
 
         setProdutos(produtosMapeados)
         setTotalPaginas(anuncios.totalPaginas)
+        setTotalItens(anuncios.totalItens)
       } catch {
         setErro('Nao foi possivel carregar os anuncios no momento.')
       } finally {
@@ -413,20 +415,28 @@ function Anuncios() {
     })
   }
 
+  function abrirFormularioAnuncio() {
+    if (usuarioLogadoId === null) {
+      window.location.href = '/login'
+      return
+    }
+
+    setFormularioAberto(true)
+  }
+
+  const catalogoVazio =
+    filtroUsuario === 'todos' &&
+    termoBusca.trim() === '' &&
+    categoriasSelecionadas.length === 0 &&
+    totalItens === 0
+
   return (
     <section id="anuncios" className="ads-section" aria-label="Anuncios">
       <div className="ads-section__inner">
         <div className="ads-section__header">
           <button
             type="button"
-            onClick={() => {
-              if (usuarioLogadoId === null) {
-                window.location.href = '/login'
-                return
-              }
-
-              setFormularioAberto(true)
-            }}
+            onClick={abrirFormularioAnuncio}
           >
             Anunciar produto
           </button>
@@ -489,7 +499,15 @@ function Anuncios() {
 
         {erro && <p className="ads-section__status">{erro}</p>}
 
-        {!carregando && !erro && produtos.length === 0 && (
+        {!carregando && !erro && catalogoVazio && (
+          <div className="ads-section__empty-state">
+            <button type="button" onClick={abrirFormularioAnuncio}>
+              seja o primeiro a anunciar!
+            </button>
+          </div>
+        )}
+
+        {!carregando && !erro && produtos.length === 0 && !catalogoVazio && (
           <p className="ads-section__status">Nenhum anuncio encontrado.</p>
         )}
 

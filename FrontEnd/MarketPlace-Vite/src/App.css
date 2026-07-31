@@ -360,6 +360,25 @@
   padding: 24px;
 }
 
+.ads-section__empty-state {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  min-height: 260px;
+}
+
+.ads-section__empty-state button {
+  background: #000;
+  border: 1px solid #000;
+  border-radius: 999px;
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  min-height: 50px;
+  padding: 0 24px;
+}
+
 .product-card {
   background: #fff;
   border: 1px solid #000;
