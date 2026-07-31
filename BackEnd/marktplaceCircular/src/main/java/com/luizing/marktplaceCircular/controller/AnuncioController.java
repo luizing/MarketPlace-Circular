@@ -2,12 +2,15 @@ package com.luizing.marktplaceCircular.controller;
 
 import com.luizing.marktplaceCircular.dtos.AnuncioDto;
 import com.luizing.marktplaceCircular.dtos.AnuncioResponseDto;
+import com.luizing.marktplaceCircular.dtos.PaginaResponseDto;
 import com.luizing.marktplaceCircular.dtos.UserContatoDto;
 import com.luizing.marktplaceCircular.model.anuncio.CategoriaAnuncio;
 import com.luizing.marktplaceCircular.service.AnuncioService;
+import com.luizing.marktplaceCircular.service.UserService;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,13 +30,22 @@ import org.springframework.web.bind.annotation.RestController;
 public class AnuncioController {
 
     private final AnuncioService anuncioService;
+    private final UserService userService;
 
-    public AnuncioController(AnuncioService anuncioService) {
+    public AnuncioController(AnuncioService anuncioService, UserService userService) {
         this.anuncioService = anuncioService;
+        this.userService = userService;
     }
 
     @PostMapping
-    public ResponseEntity<AnuncioResponseDto> criar(@RequestBody AnuncioDto dto) {
+    public ResponseEntity<AnuncioResponseDto> criar(
+            @RequestBody AnuncioDto dto,
+            Authentication authentication
+    ) {
+        if (!usuarioEhAutenticado(dto.usuarioId(), authentication)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
         if (anuncioService.atingiuLimiteAnuncios(dto.usuarioId())) {
             return ResponseEntity.status(HttpStatus.CONFLICT).build();
         }
@@ -44,12 +56,17 @@ public class AnuncioController {
     }
 
     @GetMapping
-    public ResponseEntity<List<AnuncioResponseDto>> listar(
+    public ResponseEntity<PaginaResponseDto<AnuncioResponseDto>> listar(
             @RequestParam(required = false) String titulo,
-            @RequestParam(required = false) CategoriaAnuncio categoria
+            @RequestParam(required = false) List<CategoriaAnuncio> categoria,
+            @RequestParam(defaultValue = "0") int pagina,
+            @RequestParam(defaultValue = "12") int tamanho
     ) {
-        List<AnuncioResponseDto> anuncios = anuncioService.listar(titulo, categoria);
-        return ResponseEntity.ok(anuncios);
+        if (pagina < 0 || tamanho < 1 || tamanho > 50) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        return ResponseEntity.ok(anuncioService.listar(titulo, categoria, pagina, tamanho));
     }
 
     @GetMapping("/{id}")
@@ -62,8 +79,13 @@ public class AnuncioController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletar(
             @PathVariable Long id,
-            @RequestParam Long usuarioId
+            @RequestParam Long usuarioId,
+            Authentication authentication
     ) {
+        if (!usuarioEhAutenticado(usuarioId, authentication)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
         if (!anuncioService.usuarioEhDono(id, usuarioId)) {
             return anuncioService.buscarPorId(id).isPresent()
                     ? ResponseEntity.status(HttpStatus.FORBIDDEN).build()
@@ -82,8 +104,13 @@ public class AnuncioController {
     @GetMapping("/{anuncioId}/interessados")
     public ResponseEntity<List<UserContatoDto>> retornarInteressados(
             @PathVariable Long anuncioId,
-            @RequestParam Long usuarioId
+            @RequestParam Long usuarioId,
+            Authentication authentication
     ) {
+        if (!usuarioEhAutenticado(usuarioId, authentication)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
         if (!anuncioService.usuarioEhDono(anuncioId, usuarioId)) {
             return anuncioService.buscarPorId(anuncioId).isPresent()
                     ? ResponseEntity.status(HttpStatus.FORBIDDEN).build()
@@ -98,8 +125,13 @@ public class AnuncioController {
     @PostMapping("/{anuncioId}/interessados/{usuarioId}")
     public ResponseEntity<AnuncioResponseDto> interessar(
             @PathVariable Long anuncioId,
-            @PathVariable Long usuarioId
+            @PathVariable Long usuarioId,
+            Authentication authentication
     ) {
+        if (!usuarioEhAutenticado(usuarioId, authentication)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
         if (anuncioService.usuarioEhDono(anuncioId, usuarioId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
@@ -112,8 +144,13 @@ public class AnuncioController {
     @DeleteMapping("/{anuncioId}/interessados/{usuarioId}")
     public ResponseEntity<AnuncioResponseDto> desinteressar(
             @PathVariable Long anuncioId,
-            @PathVariable Long usuarioId
+            @PathVariable Long usuarioId,
+            Authentication authentication
     ) {
+        if (!usuarioEhAutenticado(usuarioId, authentication)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
         return anuncioService.desinteressar(anuncioId, usuarioId)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
@@ -122,10 +159,21 @@ public class AnuncioController {
     @GetMapping("/{anuncioId}/interessados/{usuarioId}")
     public ResponseEntity<Boolean> verificarInteresse(
             @PathVariable Long anuncioId,
-            @PathVariable Long usuarioId
+            @PathVariable Long usuarioId,
+            Authentication authentication
     ) {
+        if (!usuarioEhAutenticado(usuarioId, authentication)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
         return anuncioService.verificarInteresse(anuncioId, usuarioId)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    private boolean usuarioEhAutenticado(Long usuarioId, Authentication authentication) {
+        return authentication != null
+                && authentication.isAuthenticated()
+                && userService.usuarioEhAutenticado(usuarioId, authentication.getName());
     }
 }

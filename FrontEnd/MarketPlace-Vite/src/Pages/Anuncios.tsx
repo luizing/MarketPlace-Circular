@@ -1,10 +1,21 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import AnuncioForm from './AnuncioForm'
 
-type Categoria = 'Livros' | 'Xerox' | 'Calculadoras' | 'Eletronicos'
+type Categoria = 'Livros' | 'Eletronicos' | 'Vestuarios' | 'Outros'
 type TipoAnuncio = 'venda' | 'doacao'
-type ApiCategoria = 'LIVROS' | 'XEROX' | 'CALCULADORAS' | 'ELETRONICOS'
+type ApiCategoria = 'LIVROS' | 'ELETRONICOS' | 'VESTUARIOS' | 'OUTROS'
 type ApiTipoAnuncio = 'VENDA' | 'DOACAO'
+type FiltroUsuario = 'todos' | 'meus' | 'interessantes'
+
+type ApiPaginaAnuncios = {
+  conteudo: ApiAnuncio[]
+  pagina: number
+  tamanho: number
+  totalItens: number
+  totalPaginas: number
+  primeira: boolean
+  ultima: boolean
+}
 
 type ApiAnuncio = {
   id: number
@@ -36,8 +47,15 @@ type Interessado = {
   contato: string
 }
 
-const categorias: Categoria[] = ['Livros', 'Xerox', 'Calculadoras', 'Eletronicos']
+const categorias: Categoria[] = ['Livros', 'Eletronicos', 'Vestuarios', 'Outros']
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080'
+const TOKEN_STORAGE_KEY = 'marketplace-circular-token'
+
+function obterCabecalhosAutenticados(): Record<string, string> {
+  const token = window.localStorage.getItem(TOKEN_STORAGE_KEY)
+
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
 
 function obterColunasAnuncios() {
   if (window.innerWidth <= 720) {
@@ -65,9 +83,9 @@ function formatarValor(produto: Produto) {
 function mapearCategoria(categoria: ApiCategoria): Categoria {
   const categoriasMapeadas: Record<ApiCategoria, Categoria> = {
     LIVROS: 'Livros',
-    XEROX: 'Xerox',
-    CALCULADORAS: 'Calculadoras',
     ELETRONICOS: 'Eletronicos',
+    VESTUARIOS: 'Vestuarios',
+    OUTROS: 'Outros',
   }
 
   return categoriasMapeadas[categoria]
@@ -102,15 +120,37 @@ function obterUsuarioLogadoId() {
   }
 }
 
+function obterEndpointAnuncios(filtro: FiltroUsuario, usuarioId: number | null) {
+  if (usuarioId === null || filtro === 'todos') {
+    return `${apiBaseUrl}/api/anuncios`
+  }
+
+  const recurso = filtro === 'meus' ? 'anuncios' : 'interessados'
+  return `${apiBaseUrl}/api/users/${usuarioId}/${recurso}`
+}
+
+function mapearCategoriaParaApi(categoria: Categoria): ApiCategoria {
+  const categoriasMapeadas: Record<Categoria, ApiCategoria> = {
+    Livros: 'LIVROS',
+    Eletronicos: 'ELETRONICOS',
+    Vestuarios: 'VESTUARIOS',
+    Outros: 'OUTROS',
+  }
+
+  return categoriasMapeadas[categoria]
+}
+
 function Anuncios() {
   const [produtos, setProdutos] = useState<Produto[]>([])
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState<string | null>(null)
   const [termoBusca, setTermoBusca] = useState('')
   const [categoriasSelecionadas, setCategoriasSelecionadas] = useState<Categoria[]>([])
-  const [mostrarMeusAnuncios, setMostrarMeusAnuncios] = useState(false)
+  const [filtroUsuario, setFiltroUsuario] = useState<FiltroUsuario>('todos')
   const [colunasAnuncios, setColunasAnuncios] = useState(obterColunasAnuncios)
   const [paginaAtual, setPaginaAtual] = useState(0)
+  const [totalPaginas, setTotalPaginas] = useState(0)
+  const [atualizacao, setAtualizacao] = useState(0)
   const [formularioAberto, setFormularioAberto] = useState(false)
   const [produtoSelecionado, setProdutoSelecionado] = useState<Produto | null>(null)
   const [interessesDoUsuario, setInteressesDoUsuario] = useState<Record<number, boolean>>({})
@@ -123,6 +163,7 @@ function Anuncios() {
   const [apagandoId, setApagandoId] = useState<number | null>(null)
 
   const usuarioLogadoId = obterUsuarioLogadoId()
+  const anunciosPorPagina = colunasAnuncios * 3
 
   useEffect(() => {
     function atualizarColunas() {
@@ -139,20 +180,35 @@ function Anuncios() {
         setCarregando(true)
         setErro(null)
 
-        const endpoint =
-          mostrarMeusAnuncios && usuarioLogadoId !== null
-            ? `${apiBaseUrl}/api/users/${usuarioLogadoId}/anuncios`
-            : `${apiBaseUrl}/api/anuncios`
-        const resposta = await fetch(endpoint)
+        const parametros = new URLSearchParams({
+          pagina: String(paginaAtual),
+          tamanho: String(anunciosPorPagina),
+        })
+
+        const titulo = termoBusca.trim()
+
+        if (titulo) {
+          parametros.set('titulo', titulo)
+        }
+
+        categoriasSelecionadas.forEach((categoria) => {
+          parametros.append('categoria', mapearCategoriaParaApi(categoria))
+        })
+
+        const endpoint = obterEndpointAnuncios(filtroUsuario, usuarioLogadoId)
+        const resposta = await fetch(`${endpoint}?${parametros}`, {
+          headers: filtroUsuario === 'todos' ? {} : obterCabecalhosAutenticados(),
+        })
 
         if (!resposta.ok) {
           throw new Error('Nao foi possivel carregar os anuncios.')
         }
 
-        const anuncios = (await resposta.json()) as ApiAnuncio[]
-        const produtosMapeados = anuncios.map(mapearAnuncio)
+        const anuncios = (await resposta.json()) as ApiPaginaAnuncios
+        const produtosMapeados = anuncios.conteudo.map(mapearAnuncio)
 
         setProdutos(produtosMapeados)
+        setTotalPaginas(anuncios.totalPaginas)
       } catch {
         setErro('Nao foi possivel carregar os anuncios no momento.')
       } finally {
@@ -161,7 +217,15 @@ function Anuncios() {
     }
 
     void carregarAnuncios()
-  }, [mostrarMeusAnuncios, usuarioLogadoId])
+  }, [
+    anunciosPorPagina,
+    atualizacao,
+    categoriasSelecionadas,
+    filtroUsuario,
+    paginaAtual,
+    termoBusca,
+    usuarioLogadoId,
+  ])
 
   useEffect(() => {
     if (!produtoSelecionado) {
@@ -189,6 +253,7 @@ function Anuncios() {
       try {
         const resposta = await fetch(
           `${apiBaseUrl}/api/anuncios/${anuncioSelecionado.id}/interessados/${usuarioId}`,
+          { headers: obterCabecalhosAutenticados() },
         )
 
         if (!resposta.ok) {
@@ -221,33 +286,9 @@ function Anuncios() {
     }
   }, [produtoSelecionado])
 
-  const produtosFiltrados = useMemo(() => {
-    const termoNormalizado = termoBusca.trim().toLowerCase()
-
-    return produtos.filter((produto) => {
-      const correspondeAoNome = produto.nome.toLowerCase().includes(termoNormalizado)
-      const correspondeACategoria =
-        categoriasSelecionadas.length === 0 ||
-        categoriasSelecionadas.includes(produto.categoria)
-
-      return correspondeAoNome && correspondeACategoria
-    })
-  }, [produtos, termoBusca, categoriasSelecionadas])
-
-  const anunciosPorPagina = colunasAnuncios * 3
-  const totalPaginas = Math.ceil(produtosFiltrados.length / anunciosPorPagina)
-  const produtosVisiveis = useMemo(
-    () =>
-      produtosFiltrados.slice(
-        paginaAtual * anunciosPorPagina,
-        (paginaAtual + 1) * anunciosPorPagina,
-      ),
-    [produtosFiltrados, paginaAtual, anunciosPorPagina],
-  )
-
   useEffect(() => {
     setPaginaAtual(0)
-  }, [termoBusca, categoriasSelecionadas, mostrarMeusAnuncios, colunasAnuncios])
+  }, [termoBusca, categoriasSelecionadas, filtroUsuario, colunasAnuncios])
 
   useEffect(() => {
     setPaginaAtual((pagina) => Math.min(pagina, Math.max(totalPaginas - 1, 0)))
@@ -278,7 +319,7 @@ function Anuncios() {
     try {
       const resposta = await fetch(
         `${apiBaseUrl}/api/anuncios/${produtoId}/interessados/${usuarioId}`,
-        { method: metodo },
+        { method: metodo, headers: obterCabecalhosAutenticados() },
       )
 
       if (!resposta.ok) {
@@ -287,12 +328,17 @@ function Anuncios() {
 
       const anuncioAtualizado = (await resposta.json()) as ApiAnuncio
       setProdutos((produtosAtuais) =>
-        produtosAtuais.map((produto) =>
-          produto.id === produtoId
-            ? { ...produto, interessados: anuncioAtualizado.interessados }
-            : produto,
-        ),
+        filtroUsuario === 'interessantes' && estaInteressado
+          ? produtosAtuais.filter((produto) => produto.id !== produtoId)
+          : produtosAtuais.map((produto) =>
+              produto.id === produtoId
+                ? { ...produto, interessados: anuncioAtualizado.interessados }
+                : produto,
+            ),
       )
+      if (filtroUsuario === 'interessantes' && estaInteressado) {
+        setProdutoSelecionado(null)
+      }
       setInteressesDoUsuario((interessesAtuais) => ({
         ...interessesAtuais,
         [produtoId]: !estaInteressado,
@@ -315,7 +361,7 @@ function Anuncios() {
     try {
       const resposta = await fetch(
         `${apiBaseUrl}/api/anuncios/${produtoId}?usuarioId=${usuarioLogadoId}`,
-        { method: 'DELETE' },
+        { method: 'DELETE', headers: obterCabecalhosAutenticados() },
       )
 
       if (!resposta.ok) {
@@ -344,6 +390,7 @@ function Anuncios() {
     try {
       const resposta = await fetch(
         `${apiBaseUrl}/api/anuncios/${produto.id}/interessados?usuarioId=${usuarioLogadoId}`,
+        { headers: obterCabecalhosAutenticados() },
       )
 
       if (!resposta.ok) {
@@ -413,14 +460,28 @@ function Anuncios() {
           </fieldset>
 
           {usuarioLogadoId !== null && (
-            <label className="ads-section__my-ads">
-              <input
-                type="checkbox"
-                checked={mostrarMeusAnuncios}
-                onChange={(event) => setMostrarMeusAnuncios(event.target.checked)}
-              />
-              <span>Meus Anuncios</span>
-            </label>
+            <div className="ads-section__user-filters" aria-label="Filtros pessoais">
+              <button
+                type="button"
+                aria-pressed={filtroUsuario === 'interessantes'}
+                onClick={() =>
+                  setFiltroUsuario((filtro) =>
+                    filtro === 'interessantes' ? 'todos' : 'interessantes',
+                  )
+                }
+              >
+                Interessantes
+              </button>
+              <button
+                type="button"
+                aria-pressed={filtroUsuario === 'meus'}
+                onClick={() =>
+                  setFiltroUsuario((filtro) => (filtro === 'meus' ? 'todos' : 'meus'))
+                }
+              >
+                Meus Anuncios
+              </button>
+            </div>
           )}
         </div>
 
@@ -428,14 +489,14 @@ function Anuncios() {
 
         {erro && <p className="ads-section__status">{erro}</p>}
 
-        {!carregando && !erro && produtosFiltrados.length === 0 && (
+        {!carregando && !erro && produtos.length === 0 && (
           <p className="ads-section__status">Nenhum anuncio encontrado.</p>
         )}
 
-        {!carregando && !erro && produtosFiltrados.length > 0 && (
+        {!carregando && !erro && produtos.length > 0 && (
           <>
             <div className="ads-section__grid" aria-live="polite">
-            {produtosVisiveis.map((produto) => (
+            {produtos.map((produto) => (
               <button
                 type="button"
                 className="product-card"
@@ -475,9 +536,9 @@ function Anuncios() {
         <AnuncioForm
           onClose={() => setFormularioAberto(false)}
           onCreated={(anuncio) => {
-            const produtoCriado = mapearAnuncio(anuncio)
-
-            setProdutos((produtosAtuais) => [produtoCriado, ...produtosAtuais])
+            void anuncio
+            setPaginaAtual(0)
+            setAtualizacao((versao) => versao + 1)
           }}
         />
       )}

@@ -1,14 +1,15 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 
-const AUTH_STORAGE_KEY = 'marketplace-circular-authenticated'
 const USER_STORAGE_KEY = 'marketplace-circular-user'
+const TOKEN_STORAGE_KEY = 'marketplace-circular-token'
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080'
 
 type UsuarioResposta = {
   id: number
   login: string
   contato: string
+  token: string
 }
 
 function Login() {
@@ -48,8 +49,11 @@ function Login() {
       }
 
       const usuario = (await resposta.json()) as UsuarioResposta
-      window.localStorage.setItem(AUTH_STORAGE_KEY, 'true')
-      window.localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(usuario))
+      window.localStorage.setItem(TOKEN_STORAGE_KEY, usuario.token)
+      window.localStorage.setItem(
+        USER_STORAGE_KEY,
+        JSON.stringify({ id: usuario.id, login: usuario.login, contato: usuario.contato }),
+      )
       window.location.href = '/#anuncios'
     } catch (error) {
       setErro(error instanceof Error ? error.message : 'Nao foi possivel realizar o login.')

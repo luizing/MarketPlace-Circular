@@ -2,6 +2,7 @@ package com.luizing.marktplaceCircular.service;
 
 import com.luizing.marktplaceCircular.dtos.AnuncioDto;
 import com.luizing.marktplaceCircular.dtos.AnuncioResponseDto;
+import com.luizing.marktplaceCircular.dtos.PaginaResponseDto;
 import com.luizing.marktplaceCircular.dtos.UserContatoDto;
 import com.luizing.marktplaceCircular.model.anuncio.Anuncio;
 import com.luizing.marktplaceCircular.model.anuncio.CategoriaAnuncio;
@@ -11,6 +12,8 @@ import com.luizing.marktplaceCircular.repository.EstatisticaRepository;
 import com.luizing.marktplaceCircular.repository.UserRepository;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 
@@ -76,12 +79,31 @@ public class AnuncioService {
                 >= LIMITE_ANUNCIOS_POR_USUARIO;
     }
 
-    public List<AnuncioResponseDto> listar(String titulo, CategoriaAnuncio categoria) {
-        return anuncioRepository.findAll().stream()
-                .filter(anuncio -> titulo == null || contemTitulo(anuncio, titulo))
-                .filter(anuncio -> categoria == null || anuncio.getCategoria() == categoria)
-                .map(AnuncioResponseDto::fromAnuncio)
-                .toList();
+    public PaginaResponseDto<AnuncioResponseDto> listar(
+            String titulo,
+            java.util.List<CategoriaAnuncio> categorias,
+            int pagina,
+            int tamanho
+    ) {
+        String tituloNormalizado = titulo == null ? "" : titulo.trim();
+        boolean possuiTitulo = !tituloNormalizado.isEmpty();
+        boolean possuiCategorias = categorias != null && !categorias.isEmpty();
+        PageRequest pageable = PageRequest.of(pagina, tamanho);
+        Page<Anuncio> anuncios;
+
+        if (possuiTitulo && possuiCategorias) {
+            anuncios = anuncioRepository.findByTituloContainingIgnoreCaseAndCategoriaInOrderByIdDesc(
+                    tituloNormalizado, categorias, pageable);
+        } else if (possuiTitulo) {
+            anuncios = anuncioRepository.findByTituloContainingIgnoreCaseOrderByIdDesc(
+                    tituloNormalizado, pageable);
+        } else if (possuiCategorias) {
+            anuncios = anuncioRepository.findByCategoriaInOrderByIdDesc(categorias, pageable);
+        } else {
+            anuncios = anuncioRepository.findAllByOrderByIdDesc(pageable);
+        }
+
+        return PaginaResponseDto.fromPage(anuncios.map(AnuncioResponseDto::fromAnuncio));
     }
 
     public Optional<AnuncioResponseDto> buscarPorId(Long id) {
@@ -148,9 +170,4 @@ public class AnuncioService {
                         .map(usuario -> usuario.getItensInteressados().contains(anuncio)));
     }
 
-
-    private boolean contemTitulo(Anuncio anuncio, String titulo) {
-        return anuncio.getTitulo() != null
-                && anuncio.getTitulo().toLowerCase().contains(titulo.toLowerCase());
-    }
 }

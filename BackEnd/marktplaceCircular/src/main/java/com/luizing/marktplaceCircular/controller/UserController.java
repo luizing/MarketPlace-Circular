@@ -1,20 +1,25 @@
 package com.luizing.marktplaceCircular.controller;
 
 import com.luizing.marktplaceCircular.dtos.AnuncioResponseDto;
+import com.luizing.marktplaceCircular.dtos.PaginaResponseDto;
 import com.luizing.marktplaceCircular.dtos.UserContatoDto;
 import com.luizing.marktplaceCircular.dtos.UserDto;
 import com.luizing.marktplaceCircular.dtos.UserLoginDto;
+import com.luizing.marktplaceCircular.dtos.LoginResponseDto;
 import com.luizing.marktplaceCircular.dtos.UserResponseDto;
+import com.luizing.marktplaceCircular.model.anuncio.CategoriaAnuncio;
 import com.luizing.marktplaceCircular.service.UserService;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -39,7 +44,7 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<UserResponseDto> verificarLogin(@RequestBody UserLoginDto dto) {
+    public ResponseEntity<LoginResponseDto> verificarLogin(@RequestBody UserLoginDto dto) {
         return userService.verificarLogin(dto)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.UNAUTHORIZED).build());
@@ -53,20 +58,52 @@ public class UserController {
     }
 
     @GetMapping("/{id}/anuncios")
-    public ResponseEntity<List<AnuncioResponseDto>> retornarItensAnunciados(
-            @PathVariable Long id
+    public ResponseEntity<PaginaResponseDto<AnuncioResponseDto>> retornarItensAnunciados(
+            @PathVariable Long id,
+            @RequestParam(required = false) String titulo,
+            @RequestParam(required = false) List<CategoriaAnuncio> categoria,
+            @RequestParam(defaultValue = "0") int pagina,
+            @RequestParam(defaultValue = "12") int tamanho,
+            Authentication authentication
     ) {
-        return userService.retornarItensAnunciados(id)
+        if (!usuarioEhAutenticado(id, authentication)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        if (pagina < 0 || tamanho < 1 || tamanho > 50) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        return userService.retornarItensAnunciados(id, titulo, categoria, pagina, tamanho)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @GetMapping("/{id}/interessados")
-    public ResponseEntity<List<AnuncioResponseDto>> retornarItensInteressados(
-            @PathVariable Long id
+    public ResponseEntity<PaginaResponseDto<AnuncioResponseDto>> retornarItensInteressados(
+            @PathVariable Long id,
+            @RequestParam(required = false) String titulo,
+            @RequestParam(required = false) List<CategoriaAnuncio> categoria,
+            @RequestParam(defaultValue = "0") int pagina,
+            @RequestParam(defaultValue = "12") int tamanho,
+            Authentication authentication
     ) {
-        return userService.retornarItensInteressados(id)
+        if (!usuarioEhAutenticado(id, authentication)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        if (pagina < 0 || tamanho < 1 || tamanho > 50) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        return userService.retornarItensInteressados(id, titulo, categoria, pagina, tamanho)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    private boolean usuarioEhAutenticado(Long usuarioId, Authentication authentication) {
+        return authentication != null
+                && authentication.isAuthenticated()
+                && userService.usuarioEhAutenticado(usuarioId, authentication.getName());
     }
 }

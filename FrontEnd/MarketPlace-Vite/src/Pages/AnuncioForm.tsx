@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-type ApiCategoria = 'LIVROS' | 'XEROX' | 'CALCULADORAS' | 'ELETRONICOS'
+type ApiCategoria = 'LIVROS' | 'ELETRONICOS' | 'VESTUARIOS' | 'OUTROS'
 type ApiTipoAnuncio = 'VENDA' | 'DOACAO'
 
 type AnuncioCriado = {
@@ -21,6 +21,13 @@ type AnuncioFormProps = {
 }
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080'
+const TOKEN_STORAGE_KEY = 'marketplace-circular-token'
+
+function obterCabecalhosAutenticados(): Record<string, string> {
+  const token = window.localStorage.getItem(TOKEN_STORAGE_KEY)
+
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
 
 function obterUsuarioLogadoId() {
   const usuarioSalvo = window.localStorage.getItem('marketplace-circular-user')
@@ -39,9 +46,9 @@ function obterUsuarioLogadoId() {
 
 const categorias: Array<{ label: string; value: ApiCategoria }> = [
   { label: 'Livros', value: 'LIVROS' },
-  { label: 'Xerox', value: 'XEROX' },
-  { label: 'Calculadoras', value: 'CALCULADORAS' },
   { label: 'Eletronicos', value: 'ELETRONICOS' },
+  { label: 'Vestuarios', value: 'VESTUARIOS' },
+  { label: 'Outros', value: 'OUTROS' },
 ]
 
 function obterTexto(formData: FormData, campo: string) {
@@ -76,6 +83,7 @@ function AnuncioForm({ onClose, onCreated }: AnuncioFormProps) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...obterCabecalhosAutenticados(),
         },
         body: JSON.stringify(payload),
       })

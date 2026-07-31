@@ -6,6 +6,16 @@ Base URL local prevista:
 http://localhost:8080
 ```
 
+## Autenticacao
+
+As operacoes que alteram anuncios e as listagens pessoais exigem um token JWT no cabecalho:
+
+```http
+Authorization: Bearer {token}
+```
+
+O token e obtido em `POST /api/users/login`, tem duracao de uma hora e representa o usuario autenticado. O `usuarioId` enviado nessas rotas deve corresponder ao usuario do token.
+
 ## Anuncios
 
 ### Criar anuncio
@@ -56,7 +66,7 @@ Cada usuario pode possuir no maximo 3 anuncios. Uma quarta tentativa retorna `40
 ### Listar anuncios
 
 ```http
-GET /api/anuncios
+GET /api/anuncios?pagina=0&tamanho=12
 ```
 
 Resposta esperada:
@@ -67,8 +77,9 @@ Content-Type: application/json
 ```
 
 ```json
-[
-  {
+{
+  "conteudo": [
+    {
     "id": 1,
     "titulo": "Livro de Calculo I",
     "descricao": "Livro usado em bom estado.",
@@ -77,27 +88,36 @@ Content-Type: application/json
     "preco": 45.0,
     "imagem": "https://exemplo.com/imagem.jpg",
     "interessados": 0
-  }
-]
+    }
+  ],
+  "pagina": 0,
+  "tamanho": 12,
+  "totalItens": 1,
+  "totalPaginas": 1,
+  "primeira": true,
+  "ultima": true
+}
 ```
 
 ### Filtrar anuncios
 
 ```http
-GET /api/anuncios?titulo=calculo&categoria=LIVROS
+GET /api/anuncios?titulo=calculo&categoria=LIVROS&categoria=ELETRONICOS&pagina=0&tamanho=12
 ```
 
 Parametros opcionais:
 
 - `titulo`: filtra anuncios cujo titulo contenha o texto informado.
-- `categoria`: filtra pela categoria exata.
+- `categoria`: filtra por uma ou mais categorias. Repita o parametro para combinar categorias.
+- `pagina`: indice da pagina, iniciado em `0`. O padrao e `0`.
+- `tamanho`: quantidade de anuncios por pagina, entre `1` e `50`. O padrao e `12`.
 
 Categorias aceitas:
 
 - `LIVROS`
-- `XEROX`
-- `CALCULADORAS`
 - `ELETRONICOS`
+- `VESTUARIOS`
+- `OUTROS`
 
 Resposta esperada:
 
@@ -107,8 +127,9 @@ Content-Type: application/json
 ```
 
 ```json
-[
-  {
+{
+  "conteudo": [
+    {
     "id": 1,
     "titulo": "Livro de Calculo I",
     "descricao": "Livro usado em bom estado.",
@@ -117,8 +138,15 @@ Content-Type: application/json
     "preco": 45.0,
     "imagem": "https://exemplo.com/imagem.jpg",
     "interessados": 0
-  }
-]
+    }
+  ],
+  "pagina": 0,
+  "tamanho": 12,
+  "totalItens": 1,
+  "totalPaginas": 1,
+  "primeira": true,
+  "ultima": true
+}
 ```
 
 ### Buscar anuncio por ID
@@ -252,10 +280,18 @@ Resposta esperada:
 ### Listar anuncios do usuario
 
 ```http
-GET /api/users/{id}/anuncios
+GET /api/users/{id}/anuncios?pagina=0&tamanho=12
 ```
 
-Retorna apenas os anuncios associados ao usuario informado.
+Retorna apenas os anuncios associados ao usuario informado, no mesmo formato paginado de `GET /api/anuncios`.
+
+### Listar anuncios interessantes do usuario
+
+```http
+GET /api/users/{id}/interessados?pagina=0&tamanho=12
+```
+
+Retorna os anuncios marcados como interessantes pelo usuario, no mesmo formato paginado de `GET /api/anuncios`.
 
 ## Usuarios
 
@@ -314,6 +350,17 @@ Corpo esperado:
 ```
 
 Credenciais validas retornam `200 OK` com os dados publicos do usuario. Credenciais invalidas retornam `401 Unauthorized`.
+
+Resposta de credenciais validas:
+
+```json
+{
+  "id": 1,
+  "login": "aluno123",
+  "contato": "aluno@example.com",
+  "token": "eyJhbGciOiJIUzI1NiJ9..."
+}
+```
 
 ## Estatisticas
 

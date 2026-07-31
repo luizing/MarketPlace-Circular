@@ -296,19 +296,28 @@
   accent-color: #000;
 }
 
-.ads-section__my-ads {
-  align-items: center;
+.ads-section__user-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.ads-section__user-filters button {
+  background: #fff;
   border: 1px solid #000;
   border-radius: 999px;
-  display: flex;
-  gap: 8px;
-  margin-top: 24px;
+  color: #000;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
   padding: 10px 14px;
   width: fit-content;
 }
 
-.ads-section__my-ads input {
-  accent-color: #000;
+.ads-section__user-filters button[aria-pressed='true'] {
+  background: #000;
+  color: #fff;
 }
 
 .ads-section__grid {

@@ -4,8 +4,8 @@ import Login from './Pages/Login'
 import placeholderLanding from './assets/Landing pic.png'
 import './App.css'
 
-const AUTH_STORAGE_KEY = 'marketplace-circular-authenticated'
 const USER_STORAGE_KEY = 'marketplace-circular-user'
+const TOKEN_STORAGE_KEY = 'marketplace-circular-token'
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080'
 
 type Estatisticas = {
@@ -16,7 +16,7 @@ type Estatisticas = {
 
 function App() {
   const [estaLogado, setEstaLogado] = useState(
-    () => window.localStorage.getItem(AUTH_STORAGE_KEY) === 'true',
+    () => window.localStorage.getItem(TOKEN_STORAGE_KEY) !== null,
   )
   const [estatisticas, setEstatisticas] = useState<Estatisticas | null>(null)
   const [erroEstatisticas, setErroEstatisticas] = useState(false)
@@ -44,7 +44,7 @@ function App() {
   }
 
   const sair = () => {
-    window.localStorage.removeItem(AUTH_STORAGE_KEY)
+    window.localStorage.removeItem(TOKEN_STORAGE_KEY)
     window.localStorage.removeItem(USER_STORAGE_KEY)
     setEstaLogado(false)
   }
