@@ -13,3 +13,8 @@
 - Decisao: adicionar containers para frontend, backend e PostgreSQL para desenvolvimento local integrado.
 - O frontend usa Nginx como servidor estatico e proxy para `/api`, evitando CORS durante a execucao via Compose.
 - Credenciais do PostgreSQL e a chave JWT permanecem em arquivos `.env` locais ignorados pelo Git.
+
+## 2026-07-31 - Preparacao para deploy no Render
+
+- O backend passou a usar `PORT`, com fallback local para `8080`, permitindo que o Web Service do Render defina a porta publica.
+- O perfil `docker` recebe a conexao PostgreSQL e os segredos por variaveis de ambiente; arquivos `.env` locais nao entram na imagem Docker.
