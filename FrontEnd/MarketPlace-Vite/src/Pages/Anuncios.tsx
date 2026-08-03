@@ -1,4 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import {
+  obterCabecalhosAutenticados,
+  redirecionarParaLogin,
+  respostaIndicaSessaoInvalida,
+  sessaoEstaValida,
+} from '../auth'
 import AnuncioForm from './AnuncioForm'
 
 type Categoria = 'Livros' | 'Eletronicos' | 'Vestuarios' | 'Outros'
@@ -49,13 +55,6 @@ type Interessado = {
 
 const categorias: Categoria[] = ['Livros', 'Eletronicos', 'Vestuarios', 'Outros']
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080'
-const TOKEN_STORAGE_KEY = 'marketplace-circular-token'
-
-function obterCabecalhosAutenticados(): Record<string, string> {
-  const token = window.localStorage.getItem(TOKEN_STORAGE_KEY)
-
-  return token ? { Authorization: `Bearer ${token}` } : {}
-}
 
 function obterColunasAnuncios() {
   if (window.innerWidth <= 720) {
@@ -106,6 +105,10 @@ function mapearAnuncio(anuncio: ApiAnuncio): Produto {
 }
 
 function obterUsuarioLogadoId() {
+  if (!sessaoEstaValida()) {
+    return null
+  }
+
   const usuarioSalvo = window.localStorage.getItem('marketplace-circular-user')
 
   if (!usuarioSalvo) {
@@ -152,6 +155,9 @@ function Anuncios() {
   const [totalPaginas, setTotalPaginas] = useState(0)
   const [totalItens, setTotalItens] = useState(0)
   const [atualizacao, setAtualizacao] = useState(0)
+  const atualizacoesAnunciosPendentes = useRef(new Set<string>())
+  const cacheDeAnuncios = useRef(new Map<string, ApiPaginaAnuncios>())
+  const [versaoAtualizacaoAnuncios, setVersaoAtualizacaoAnuncios] = useState(0)
   const [formularioAberto, setFormularioAberto] = useState(false)
   const [produtoSelecionado, setProdutoSelecionado] = useState<Produto | null>(null)
   const [interessesDoUsuario, setInteressesDoUsuario] = useState<Record<number, boolean>>({})
@@ -176,49 +182,83 @@ function Anuncios() {
   }, [])
 
   useEffect(() => {
+    let cancelado = false
+
     async function carregarAnuncios() {
+      const parametros = new URLSearchParams({
+        pagina: String(paginaAtual),
+        tamanho: String(anunciosPorPagina),
+      })
+
+      const titulo = termoBusca.trim()
+
+      if (titulo) {
+        parametros.set('titulo', titulo)
+      }
+
+      categoriasSelecionadas.forEach((categoria) => {
+        parametros.append('categoria', mapearCategoriaParaApi(categoria))
+      })
+
+      const endpoint = obterEndpointAnuncios(filtroUsuario, usuarioLogadoId)
+      const urlDaRequisicao = `${endpoint}?${parametros}`
+      const anunciosEmMemoria = cacheDeAnuncios.current.get(urlDaRequisicao)
+      const atualizarDoServidor = atualizacoesAnunciosPendentes.current.delete(urlDaRequisicao)
+
+      function exibirAnuncios(anuncios: ApiPaginaAnuncios) {
+        setProdutos(anuncios.conteudo.map(mapearAnuncio))
+        setTotalPaginas(anuncios.totalPaginas)
+        setTotalItens(anuncios.totalItens)
+      }
+
+      if (anunciosEmMemoria) {
+        exibirAnuncios(anunciosEmMemoria)
+        setCarregando(false)
+      } else {
+        setCarregando(produtos.length === 0)
+      }
+
+      setErro(null)
+
+      if (atualizarDoServidor) {
+        parametros.set('__atualizar', '1')
+      }
+
       try {
-        setCarregando(true)
-        setErro(null)
-
-        const parametros = new URLSearchParams({
-          pagina: String(paginaAtual),
-          tamanho: String(anunciosPorPagina),
-        })
-
-        const titulo = termoBusca.trim()
-
-        if (titulo) {
-          parametros.set('titulo', titulo)
-        }
-
-        categoriasSelecionadas.forEach((categoria) => {
-          parametros.append('categoria', mapearCategoriaParaApi(categoria))
-        })
-
-        const endpoint = obterEndpointAnuncios(filtroUsuario, usuarioLogadoId)
         const resposta = await fetch(`${endpoint}?${parametros}`, {
           headers: filtroUsuario === 'todos' ? {} : obterCabecalhosAutenticados(),
         })
 
         if (!resposta.ok) {
+          if (filtroUsuario !== 'todos' && respostaIndicaSessaoInvalida(resposta.status)) {
+            return
+          }
+
           throw new Error('Nao foi possivel carregar os anuncios.')
         }
 
         const anuncios = (await resposta.json()) as ApiPaginaAnuncios
-        const produtosMapeados = anuncios.conteudo.map(mapearAnuncio)
+        cacheDeAnuncios.current.set(urlDaRequisicao, anuncios)
 
-        setProdutos(produtosMapeados)
-        setTotalPaginas(anuncios.totalPaginas)
-        setTotalItens(anuncios.totalItens)
+        if (!cancelado) {
+          exibirAnuncios(anuncios)
+        }
       } catch {
-        setErro('Nao foi possivel carregar os anuncios no momento.')
+        if (!cancelado && !anunciosEmMemoria) {
+          setErro('Nao foi possivel carregar os anuncios no momento.')
+        }
       } finally {
-        setCarregando(false)
+        if (!cancelado) {
+          setCarregando(false)
+        }
       }
     }
 
     void carregarAnuncios()
+
+    return () => {
+      cancelado = true
+    }
   }, [
     anunciosPorPagina,
     atualizacao,
@@ -227,7 +267,42 @@ function Anuncios() {
     paginaAtual,
     termoBusca,
     usuarioLogadoId,
+    versaoAtualizacaoAnuncios,
   ])
+
+  useEffect(() => {
+    const intervalo = window.setInterval(() => {
+      setAtualizacao((versao) => versao + 1)
+    }, 60_000)
+
+    return () => window.clearInterval(intervalo)
+  }, [])
+
+  useEffect(() => {
+    function atualizarQuandoServidorResponder(event: MessageEvent) {
+      if (event.data?.type !== 'api-atualizada') {
+        return
+      }
+
+      const url = new URL(event.data.url)
+      const endpointsDoUsuario = usuarioLogadoId === null
+        ? []
+        : [
+            `/api/users/${usuarioLogadoId}/anuncios`,
+            `/api/users/${usuarioLogadoId}/interessados`,
+          ]
+
+      if (url.pathname === '/api/anuncios' || endpointsDoUsuario.includes(url.pathname)) {
+        atualizacoesAnunciosPendentes.current.add(event.data.url)
+        setVersaoAtualizacaoAnuncios((versao) => versao + 1)
+      }
+    }
+
+    navigator.serviceWorker?.addEventListener('message', atualizarQuandoServidorResponder)
+    return () => {
+      navigator.serviceWorker?.removeEventListener('message', atualizarQuandoServidorResponder)
+    }
+  }, [usuarioLogadoId])
 
   useEffect(() => {
     if (!produtoSelecionado) {
@@ -259,6 +334,10 @@ function Anuncios() {
         )
 
         if (!resposta.ok) {
+          if (respostaIndicaSessaoInvalida(resposta.status)) {
+            return
+          }
+
           throw new Error('Nao foi possivel verificar seu interesse.')
         }
 
@@ -308,7 +387,7 @@ function Anuncios() {
     const usuarioId = obterUsuarioLogadoId()
 
     if (usuarioId === null) {
-      setErroInteresse('Entre na sua conta para demonstrar interesse.')
+      redirecionarParaLogin()
       return
     }
 
@@ -325,6 +404,10 @@ function Anuncios() {
       )
 
       if (!resposta.ok) {
+        if (respostaIndicaSessaoInvalida(resposta.status)) {
+          return
+        }
+
         throw new Error('Nao foi possivel atualizar seu interesse.')
       }
 
@@ -354,6 +437,7 @@ function Anuncios() {
 
   async function apagarAnuncio(produtoId: number) {
     if (usuarioLogadoId === null) {
+      redirecionarParaLogin()
       return
     }
 
@@ -367,6 +451,10 @@ function Anuncios() {
       )
 
       if (!resposta.ok) {
+        if (respostaIndicaSessaoInvalida(resposta.status)) {
+          return
+        }
+
         throw new Error('Nao foi possivel apagar o anuncio.')
       }
 
@@ -384,6 +472,11 @@ function Anuncios() {
   }
 
   async function mostrarInteressados(produto: Produto) {
+    if (usuarioLogadoId === null) {
+      redirecionarParaLogin()
+      return
+    }
+
     setAnuncioInteressados(produto)
     setInteressados([])
     setErroInteressados(null)
@@ -396,6 +489,10 @@ function Anuncios() {
       )
 
       if (!resposta.ok) {
+        if (respostaIndicaSessaoInvalida(resposta.status)) {
+          return
+        }
+
         throw new Error('Nao foi possivel carregar os interessados.')
       }
 
@@ -417,7 +514,7 @@ function Anuncios() {
 
   function abrirFormularioAnuncio() {
     if (usuarioLogadoId === null) {
-      window.location.href = '/login'
+      redirecionarParaLogin()
       return
     }
 
@@ -495,7 +592,9 @@ function Anuncios() {
           )}
         </div>
 
-        {carregando && <p className="ads-section__status">Carregando anuncios...</p>}
+        {carregando && produtos.length === 0 && (
+          <p className="ads-section__status">Carregando anuncios...</p>
+        )}
 
         {erro && <p className="ads-section__status">{erro}</p>}
 
@@ -511,7 +610,7 @@ function Anuncios() {
           <p className="ads-section__status">Nenhum anuncio encontrado.</p>
         )}
 
-        {!carregando && !erro && produtos.length > 0 && (
+        {produtos.length > 0 && (
           <>
             <div className="ads-section__grid" aria-live="polite">
             {produtos.map((produto) => (

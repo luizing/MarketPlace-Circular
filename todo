@@ -1,0 +1,39 @@
+1. Concluir autenticação JWT
+      - [x] Tratar expiração do token no frontend.
+      - [x] Redirecionar para login ao receber 401 ou 403.
+      - Remover o uso de usuarioId no corpo e URLs quando possível, usando
+        apenas o token.
+
+  2. Segurança e validação
+      - Validar campos obrigatórios no backend.
+      - Limitar tamanho de título, descrição e URL de imagem.
+      - Criar testes para CORS, JWT, permissões e tentativas de agir em nome de
+        outro usuário.
+
+  3. Ciclo de vida do anúncio
+      - Adicionar status: disponível, vendido e doado.
+      - Permitir que o dono encerre um anúncio.
+      - Fazer itensDisponiveis considerar somente anúncios ativos.
+
+  4. Experiência de usuário
+      - Exibir feedback de sincronização discreto, sem ocultar os anúncios.
+      - Melhorar mensagens de erro do backend, como limite de três anúncios e
+        token expirado.
+
+      - Adicionar confirmação antes de apagar anúncios.
+
+  5. PWA
+      - Testar instalação em Android e iOS.
+      - Validar o comportamento offline de anúncios já carregados.
+      - Criar uma tela offline adequada para quando não houver cache.
+
+  6. Deploy e operação
+      - Finalizar o deploy do backend no Render e confirmar CORS com a Vercel.
+      - Configurar health check e acompanhar logs do Render.
+      - Registrar variáveis de ambiente e processo de deploy no README.
+
+  7. Qualidade
+      - Criar testes de integração para endpoints de anúncios e usuários.
+      - Criar testes de interface para login, filtros, paginação e interesse.
+      - Corrigir textos com codificação incorreta visíveis em partes da
+        interface.

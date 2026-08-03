@@ -1,4 +1,4 @@
-const CACHE_NAME = 'marketplace-circular-v4'
+const CACHE_NAME = 'marketplace-circular-v5'
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -36,19 +36,52 @@ self.addEventListener('fetch', (event) => {
   const requestUrl = new URL(event.request.url)
 
   if (requestUrl.pathname.startsWith('/api/')) {
+    const atualizacaoForcada = requestUrl.searchParams.has('__atualizar')
+    const urlParaCache = new URL(requestUrl)
+    urlParaCache.searchParams.delete('__atualizar')
+    const requisicaoParaCache = new Request(urlParaCache.toString(), {
+      method: event.request.method,
+    })
+
+    if (atualizacaoForcada) {
+      event.respondWith(
+        fetch(event.request)
+          .then((response) => {
+            const responseCopy = response.clone()
+            caches.open(CACHE_NAME).then((cache) => cache.put(requisicaoParaCache, responseCopy))
+            return response
+          })
+          .catch(() =>
+            caches.match(requisicaoParaCache).then(
+              (cachedResponse) =>
+                cachedResponse ?? new Response('Recurso indisponivel offline.', { status: 503 }),
+            ),
+          ),
+      )
+      return
+    }
+
     event.respondWith(
-      fetch(event.request)
+      caches.match(requisicaoParaCache).then((cachedResponse) => {
+        const respostaDaRede = fetch(event.request)
         .then((response) => {
           const responseCopy = response.clone()
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseCopy))
+          caches.open(CACHE_NAME).then((cache) => cache.put(requisicaoParaCache, responseCopy))
+          if (cachedResponse) {
+            notificarAtualizacaoDaApi(event.request.url)
+          }
           return response
         })
         .catch(() =>
-          caches.match(event.request).then(
+          caches.match(requisicaoParaCache).then(
             (cachedResponse) =>
               cachedResponse ?? new Response('Recurso indisponivel offline.', { status: 503 }),
           ),
-        ),
+        )
+
+        event.waitUntil(respostaDaRede.then(() => undefined))
+        return cachedResponse ?? respostaDaRede
+      }),
     )
     return
   }
@@ -93,3 +126,11 @@ self.addEventListener('fetch', (event) => {
     }),
   )
 })
+
+async function notificarAtualizacaoDaApi(url) {
+  const clientes = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+
+  clientes.forEach((cliente) => {
+    cliente.postMessage({ type: 'api-atualizada', url })
+  })
+}

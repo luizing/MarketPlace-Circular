@@ -1,4 +1,10 @@
 import { useState } from 'react'
+import {
+  obterCabecalhosAutenticados,
+  redirecionarParaLogin,
+  respostaIndicaSessaoInvalida,
+  sessaoEstaValida,
+} from '../auth'
 
 type ApiCategoria = 'LIVROS' | 'ELETRONICOS' | 'VESTUARIOS' | 'OUTROS'
 type ApiTipoAnuncio = 'VENDA' | 'DOACAO'
@@ -21,13 +27,6 @@ type AnuncioFormProps = {
 }
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080'
-const TOKEN_STORAGE_KEY = 'marketplace-circular-token'
-
-function obterCabecalhosAutenticados(): Record<string, string> {
-  const token = window.localStorage.getItem(TOKEN_STORAGE_KEY)
-
-  return token ? { Authorization: `Bearer ${token}` } : {}
-}
 
 function obterUsuarioLogadoId() {
   const usuarioSalvo = window.localStorage.getItem('marketplace-circular-user')
@@ -61,6 +60,12 @@ function AnuncioForm({ onClose, onCreated }: AnuncioFormProps) {
 
   async function criarAnuncio(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
+
+    if (!sessaoEstaValida()) {
+      redirecionarParaLogin()
+      return
+    }
+
     setEnviando(true)
     setErro(null)
 
@@ -89,6 +94,10 @@ function AnuncioForm({ onClose, onCreated }: AnuncioFormProps) {
       })
 
       if (!resposta.ok) {
+        if (respostaIndicaSessaoInvalida(resposta.status)) {
+          return
+        }
+
         throw new Error(
           resposta.status === 409
             ? 'Cada usuario pode criar no maximo 3 anuncios.'

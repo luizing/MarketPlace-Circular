@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
+import { TOKEN_STORAGE_KEY, USER_STORAGE_KEY } from '../auth'
 
-const USER_STORAGE_KEY = 'marketplace-circular-user'
-const TOKEN_STORAGE_KEY = 'marketplace-circular-token'
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080'
 
 type UsuarioResposta = {

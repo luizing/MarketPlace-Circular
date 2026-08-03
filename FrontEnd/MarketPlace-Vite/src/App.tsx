@@ -1,11 +1,14 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Anuncios from './Pages/Anuncios'
 import Login from './Pages/Login'
+import {
+  encerrarSessao,
+  obterDuracaoRestanteToken,
+  sessaoEstaValida,
+} from './auth'
 import placeholderLanding from './assets/Landing pic.png'
 import './App.css'
 
-const USER_STORAGE_KEY = 'marketplace-circular-user'
-const TOKEN_STORAGE_KEY = 'marketplace-circular-token'
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080'
 
 type Estatisticas = {
@@ -16,15 +19,52 @@ type Estatisticas = {
 
 function App() {
   const [estaLogado, setEstaLogado] = useState(
-    () => window.localStorage.getItem(TOKEN_STORAGE_KEY) !== null,
+    () => sessaoEstaValida(),
   )
   const [estatisticas, setEstatisticas] = useState<Estatisticas | null>(null)
   const [erroEstatisticas, setErroEstatisticas] = useState(false)
+  const atualizacaoEstatisticasPendente = useRef(false)
+  const [versaoAtualizacaoEstatisticas, setVersaoAtualizacaoEstatisticas] = useState(0)
+
+  const sair = () => {
+    encerrarSessao()
+    setEstaLogado(false)
+  }
+
+  useEffect(() => {
+    if (!estaLogado) {
+      return
+    }
+
+    const duracaoRestante = obterDuracaoRestanteToken()
+
+    if (duracaoRestante === 0) {
+      sair()
+      window.location.href = '/login'
+      return
+    }
+
+    const temporizador = window.setTimeout(() => {
+      sair()
+      window.location.href = '/login'
+    }, duracaoRestante)
+
+    return () => window.clearTimeout(temporizador)
+  }, [estaLogado])
 
   useEffect(() => {
     async function carregarEstatisticas() {
       try {
-        const resposta = await fetch(`${apiBaseUrl}/api/estatisticas`)
+        const url = new URL(`${apiBaseUrl}/api/estatisticas`, window.location.origin)
+
+        const atualizarDoServidor = atualizacaoEstatisticasPendente.current
+        atualizacaoEstatisticasPendente.current = false
+
+        if (atualizarDoServidor) {
+          url.searchParams.set('__atualizar', '1')
+        }
+
+        const resposta = await fetch(url)
 
         if (!resposta.ok) {
           throw new Error('Nao foi possivel carregar as estatisticas.')
@@ -37,16 +77,30 @@ function App() {
     }
 
     void carregarEstatisticas()
+  }, [versaoAtualizacaoEstatisticas])
+
+  useEffect(() => {
+    function atualizarQuandoServidorResponder(event: MessageEvent) {
+      if (event.data?.type !== 'api-atualizada') {
+        return
+      }
+
+      const url = new URL(event.data.url)
+
+      if (url.pathname === '/api/estatisticas') {
+        atualizacaoEstatisticasPendente.current = true
+        setVersaoAtualizacaoEstatisticas((versao) => versao + 1)
+      }
+    }
+
+    navigator.serviceWorker?.addEventListener('message', atualizarQuandoServidorResponder)
+    return () => {
+      navigator.serviceWorker?.removeEventListener('message', atualizarQuandoServidorResponder)
+    }
   }, [])
 
   if (window.location.pathname === '/login') {
     return <Login />
-  }
-
-  const sair = () => {
-    window.localStorage.removeItem(TOKEN_STORAGE_KEY)
-    window.localStorage.removeItem(USER_STORAGE_KEY)
-    setEstaLogado(false)
   }
 
   return (
