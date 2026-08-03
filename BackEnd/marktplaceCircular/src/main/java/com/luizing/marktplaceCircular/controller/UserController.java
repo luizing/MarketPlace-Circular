@@ -1,6 +1,7 @@
 package com.luizing.marktplaceCircular.controller;
 
 import com.luizing.marktplaceCircular.dtos.AnuncioResponseDto;
+import com.luizing.marktplaceCircular.dtos.ApiErroDto;
 import com.luizing.marktplaceCircular.dtos.PaginaResponseDto;
 import com.luizing.marktplaceCircular.dtos.UserContatoDto;
 import com.luizing.marktplaceCircular.dtos.UserDto;
@@ -37,17 +38,17 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<UserResponseDto> criar(@RequestBody UserDto dto) {
+    public ResponseEntity<?> criar(@RequestBody UserDto dto) {
         return userService.criar(dto)
-                .map(user -> ResponseEntity.status(HttpStatus.CREATED).body(user))
-                .orElseGet(() -> ResponseEntity.status(HttpStatus.CONFLICT).build());
+                .<ResponseEntity<?>>map(user -> ResponseEntity.status(HttpStatus.CREATED).body(user))
+                .orElseGet(() -> erro(HttpStatus.CONFLICT, "Este login ja esta cadastrado."));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponseDto> verificarLogin(@RequestBody UserLoginDto dto) {
+    public ResponseEntity<?> verificarLogin(@RequestBody UserLoginDto dto) {
         return userService.verificarLogin(dto)
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.status(HttpStatus.UNAUTHORIZED).build());
+                .<ResponseEntity<?>>map(ResponseEntity::ok)
+                .orElseGet(() -> erro(HttpStatus.UNAUTHORIZED, "Login ou senha invalidos."));
     }
 
     @GetMapping("/{id}/contato")
@@ -105,5 +106,9 @@ public class UserController {
         return authentication != null
                 && authentication.isAuthenticated()
                 && userService.usuarioEhAutenticado(usuarioId, authentication.getName());
+    }
+
+    private ResponseEntity<ApiErroDto> erro(HttpStatus status, String mensagem) {
+        return ResponseEntity.status(status).body(new ApiErroDto(mensagem));
     }
 }

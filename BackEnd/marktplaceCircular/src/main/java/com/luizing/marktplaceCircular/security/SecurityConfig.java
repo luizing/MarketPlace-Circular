@@ -1,6 +1,8 @@
 package com.luizing.marktplaceCircular.security;
 
 import java.util.List;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -49,6 +51,10 @@ public class SecurityConfig {
                 .cors(cors -> {
                 })
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .exceptionHandling(excecao -> excecao.authenticationEntryPoint(
+                        (request, response, exception) -> escreverErroAutenticacao(response,
+                                "Autenticacao obrigatoria. Faca login novamente.")
+                ))
                 .authorizeHttpRequests(autorizacao -> autorizacao
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/users", "/api/users/login").permitAll()
@@ -57,5 +63,13 @@ public class SecurityConfig {
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
+    }
+
+    static void escreverErroAutenticacao(HttpServletResponse response, String mensagem)
+            throws IOException {
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setCharacterEncoding("UTF-8");
+        response.setContentType("application/json");
+        response.getWriter().write("{\"mensagem\":\"" + mensagem + "\"}");
     }
 }

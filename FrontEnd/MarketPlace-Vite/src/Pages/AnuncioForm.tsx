@@ -5,6 +5,7 @@ import {
   respostaIndicaSessaoInvalida,
   sessaoEstaValida,
 } from '../auth'
+import { obterMensagemErro } from '../api'
 
 type ApiCategoria = 'LIVROS' | 'ELETRONICOS' | 'VESTUARIOS' | 'OUTROS'
 type ApiTipoAnuncio = 'VENDA' | 'DOACAO'
@@ -98,11 +99,7 @@ function AnuncioForm({ onClose, onCreated }: AnuncioFormProps) {
           return
         }
 
-        throw new Error(
-          resposta.status === 409
-            ? 'Cada usuario pode criar no maximo 3 anuncios.'
-            : 'Nao foi possivel criar o anuncio.',
-        )
+        throw new Error(await obterMensagemErro(resposta, 'Nao foi possivel criar o anuncio.'))
       }
 
       const anuncioCriado = (await resposta.json()) as AnuncioCriado
@@ -139,12 +136,12 @@ function AnuncioForm({ onClose, onCreated }: AnuncioFormProps) {
         >
           <label>
             <span>Titulo</span>
-            <input type="text" name="titulo" required />
+            <input type="text" name="titulo" maxLength={100} required />
           </label>
 
           <label>
             <span>Descricao</span>
-            <textarea name="descricao" rows={4} required />
+            <textarea name="descricao" rows={4} maxLength={1000} required />
           </label>
 
           <label>
@@ -176,7 +173,7 @@ function AnuncioForm({ onClose, onCreated }: AnuncioFormProps) {
 
           <label>
             <span>URL da imagem</span>
-            <input type="url" name="imagem" required />
+            <input type="url" name="imagem" maxLength={2048} required />
           </label>
 
           {erro && <p className="ad-form-card__error">{erro}</p>}

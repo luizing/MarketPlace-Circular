@@ -13,6 +13,7 @@ import com.luizing.marktplaceCircular.model.user.User;
 import com.luizing.marktplaceCircular.repository.AnuncioRepository;
 import com.luizing.marktplaceCircular.repository.UserRepository;
 import com.luizing.marktplaceCircular.security.JwtService;
+import com.luizing.marktplaceCircular.validation.ValidacaoDados;
 import java.util.Optional;
 import java.util.List;
 import org.springframework.data.domain.Page;
@@ -41,6 +42,8 @@ public class UserService {
     }
 
     public Optional<UserResponseDto> criar(UserDto dto) {
+        ValidacaoDados.validarNovoUsuario(dto);
+
         if (userRepository.existsByLogin(dto.login())) {
             return Optional.empty();
         }
@@ -52,6 +55,8 @@ public class UserService {
     }
 
     public Optional<LoginResponseDto> verificarLogin(UserLoginDto dto) {
+        ValidacaoDados.validarLogin(dto);
+
         return userRepository.findByLogin(dto.login())
                 .filter(usuario -> senhaValida(usuario, dto.senha()))
                 .map(usuario -> LoginResponseDto.fromUser(

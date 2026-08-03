@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { TOKEN_STORAGE_KEY, USER_STORAGE_KEY } from '../auth'
+import { obterMensagemErro } from '../api'
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080'
 
@@ -41,9 +42,10 @@ function Login() {
 
       if (!resposta.ok) {
         throw new Error(
-          resposta.status === 401
-            ? 'Login ou senha invalidos.'
-            : 'Nao foi possivel realizar o login.',
+          await obterMensagemErro(
+            resposta,
+            resposta.status === 401 ? 'Login ou senha invalidos.' : 'Nao foi possivel realizar o login.',
+          ),
         )
       }
 
@@ -85,9 +87,10 @@ function Login() {
 
       if (!resposta.ok) {
         throw new Error(
-          resposta.status === 409
-            ? 'Este login ja esta cadastrado.'
-            : 'Nao foi possivel criar a conta.',
+          await obterMensagemErro(
+            resposta,
+            resposta.status === 409 ? 'Este login ja esta cadastrado.' : 'Nao foi possivel criar a conta.',
+          ),
         )
       }
 

@@ -2,11 +2,13 @@ package com.luizing.marktplaceCircular.controller;
 
 import com.luizing.marktplaceCircular.dtos.AnuncioDto;
 import com.luizing.marktplaceCircular.dtos.AnuncioResponseDto;
+import com.luizing.marktplaceCircular.dtos.ApiErroDto;
 import com.luizing.marktplaceCircular.dtos.PaginaResponseDto;
 import com.luizing.marktplaceCircular.dtos.UserContatoDto;
 import com.luizing.marktplaceCircular.model.anuncio.CategoriaAnuncio;
 import com.luizing.marktplaceCircular.service.AnuncioService;
 import com.luizing.marktplaceCircular.service.UserService;
+import com.luizing.marktplaceCircular.validation.ValidacaoDados;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -38,21 +40,23 @@ public class AnuncioController {
     }
 
     @PostMapping
-    public ResponseEntity<AnuncioResponseDto> criar(
+    public ResponseEntity<?> criar(
             @RequestBody AnuncioDto dto,
             Authentication authentication
     ) {
+        ValidacaoDados.validarAnuncio(dto);
+
         if (!usuarioEhAutenticado(dto.usuarioId(), authentication)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            return erro(HttpStatus.FORBIDDEN, "Voce nao pode criar anuncios em nome de outro usuario.");
         }
 
         if (anuncioService.atingiuLimiteAnuncios(dto.usuarioId())) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+            return erro(HttpStatus.CONFLICT, "Cada usuario pode criar no maximo 3 anuncios.");
         }
 
         return anuncioService.criar(dto)
-                .map(anuncio -> ResponseEntity.status(HttpStatus.CREATED).body(anuncio))
-                .orElseGet(() -> ResponseEntity.badRequest().build());
+                .<ResponseEntity<?>>map(anuncio -> ResponseEntity.status(HttpStatus.CREATED).body(anuncio))
+                .orElseGet(() -> erro(HttpStatus.BAD_REQUEST, "Nao foi possivel criar o anuncio."));
     }
 
     @GetMapping
@@ -77,25 +81,25 @@ public class AnuncioController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletar(
+    public ResponseEntity<?> deletar(
             @PathVariable Long id,
             @RequestParam Long usuarioId,
             Authentication authentication
     ) {
         if (!usuarioEhAutenticado(usuarioId, authentication)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            return erro(HttpStatus.FORBIDDEN, "Voce nao pode apagar anuncios de outro usuario.");
         }
 
         if (!anuncioService.usuarioEhDono(id, usuarioId)) {
             return anuncioService.buscarPorId(id).isPresent()
-                    ? ResponseEntity.status(HttpStatus.FORBIDDEN).build()
-                    : ResponseEntity.notFound().build();
+                    ? erro(HttpStatus.FORBIDDEN, "Apenas o dono pode apagar este anuncio.")
+                    : erro(HttpStatus.NOT_FOUND, "Anuncio nao encontrado.");
         }
 
         boolean anuncioRemovido = anuncioService.deletar(id);
 
         if (!anuncioRemovido) {
-            return ResponseEntity.notFound().build();
+            return erro(HttpStatus.NOT_FOUND, "Anuncio nao encontrado.");
         }
 
         return ResponseEntity.noContent().build();
@@ -175,5 +179,9 @@ public class AnuncioController {
         return authentication != null
                 && authentication.isAuthenticated()
                 && userService.usuarioEhAutenticado(usuarioId, authentication.getName());
+    }
+
+    private ResponseEntity<ApiErroDto> erro(HttpStatus status, String mensagem) {
+        return ResponseEntity.status(status).body(new ApiErroDto(mensagem));
     }
 }

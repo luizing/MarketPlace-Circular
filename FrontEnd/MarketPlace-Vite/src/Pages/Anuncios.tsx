@@ -6,6 +6,7 @@ import {
   sessaoEstaValida,
 } from '../auth'
 import AnuncioForm from './AnuncioForm'
+import { obterMensagemErro } from '../api'
 
 type Categoria = 'Livros' | 'Eletronicos' | 'Vestuarios' | 'Outros'
 type TipoAnuncio = 'venda' | 'doacao'
@@ -168,6 +169,7 @@ function Anuncios() {
   const [carregandoInteressados, setCarregandoInteressados] = useState(false)
   const [erroInteressados, setErroInteressados] = useState<string | null>(null)
   const [apagandoId, setApagandoId] = useState<number | null>(null)
+  const [anuncioParaApagar, setAnuncioParaApagar] = useState<Produto | null>(null)
 
   const usuarioLogadoId = obterUsuarioLogadoId()
   const anunciosPorPagina = colunasAnuncios * 3
@@ -455,7 +457,7 @@ function Anuncios() {
           return
         }
 
-        throw new Error('Nao foi possivel apagar o anuncio.')
+        throw new Error(await obterMensagemErro(resposta, 'Nao foi possivel apagar o anuncio.'))
       }
 
       setProdutos((produtosAtuais) =>
@@ -464,8 +466,11 @@ function Anuncios() {
       if (produtoSelecionado?.id === produtoId) {
         setProdutoSelecionado(null)
       }
-    } catch {
-      setErro('Nao foi possivel apagar o anuncio no momento.')
+      setAnuncioParaApagar(null)
+    } catch (error) {
+      setErro(
+        error instanceof Error ? error.message : 'Nao foi possivel apagar o anuncio no momento.',
+      )
     } finally {
       setApagandoId(null)
     }
@@ -758,7 +763,7 @@ function Anuncios() {
                       type="button"
                       className="product-card__delete"
                       disabled={apagandoId === produtoSelecionado.id}
-                      onClick={() => void apagarAnuncio(produtoSelecionado.id)}
+                      onClick={() => setAnuncioParaApagar(produtoSelecionado)}
                     >
                       {apagandoId === produtoSelecionado.id
                         ? 'Apagando...'
@@ -785,6 +790,42 @@ function Anuncios() {
                   </button>
                 </>
               )}
+            </div>
+          </section>
+        </div>
+      )}
+
+      {anuncioParaApagar && (
+        <div
+          className="product-modal-overlay confirmation-modal-overlay"
+          role="presentation"
+          onClick={(event) => {
+            if (event.target === event.currentTarget && apagandoId === null) {
+              setAnuncioParaApagar(null)
+            }
+          }}
+        >
+          <section className="confirmation-modal" role="dialog" aria-modal="true" aria-labelledby="confirm-delete-title">
+            <h2 id="confirm-delete-title">Apagar anuncio?</h2>
+            <p>O anuncio &quot;{anuncioParaApagar.nome}&quot; sera removido permanentemente.</p>
+            <div className="confirmation-modal__actions">
+              <button
+                type="button"
+                disabled={apagandoId !== null}
+                onClick={() => setAnuncioParaApagar(null)}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="confirmation-modal__delete"
+                disabled={apagandoId !== null}
+                onClick={() => {
+                  void apagarAnuncio(anuncioParaApagar.id)
+                }}
+              >
+                {apagandoId === anuncioParaApagar.id ? 'Apagando...' : 'Apagar anuncio'}
+              </button>
             </div>
           </section>
         </div>

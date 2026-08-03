@@ -5,9 +5,9 @@
         apenas o token.
 
   2. Segurança e validação
-      - Validar campos obrigatórios no backend.
-      - Limitar tamanho de título, descrição e URL de imagem.
-      - Criar testes para CORS, JWT, permissões e tentativas de agir em nome de
+      - [x] Validar campos obrigatórios no backend.
+      - [x] Limitar tamanho de título, descrição e URL de imagem.
+      - [x] Criar testes para CORS, JWT, permissões e tentativas de agir em nome de
         outro usuário.
 
   3. Ciclo de vida do anúncio
@@ -16,11 +16,11 @@
       - Fazer itensDisponiveis considerar somente anúncios ativos.
 
   4. Experiência de usuário
-      - Exibir feedback de sincronização discreto, sem ocultar os anúncios.
-      - Melhorar mensagens de erro do backend, como limite de três anúncios e
+      - Sincronizar anúncios em segundo plano, sem ocultar os anúncios.
+      - [x] Melhorar mensagens de erro do backend, como limite de três anúncios e
         token expirado.
 
-      - Adicionar confirmação antes de apagar anúncios.
+      - [x] Adicionar confirmação antes de apagar anúncios.
 
   5. PWA
       - Testar instalação em Android e iOS.

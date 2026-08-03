@@ -10,6 +10,7 @@ import com.luizing.marktplaceCircular.model.estatistica.Estatistica;
 import com.luizing.marktplaceCircular.repository.AnuncioRepository;
 import com.luizing.marktplaceCircular.repository.EstatisticaRepository;
 import com.luizing.marktplaceCircular.repository.UserRepository;
+import com.luizing.marktplaceCircular.validation.ValidacaoDados;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
@@ -38,6 +39,8 @@ public class AnuncioService {
 
     @Transactional
     public Optional<AnuncioResponseDto> criar(AnuncioDto dto) {
+        ValidacaoDados.validarAnuncio(dto);
+
         if (dto.usuarioId() == null || atingiuLimiteAnuncios(dto.usuarioId())) {
             return Optional.empty();
         }
