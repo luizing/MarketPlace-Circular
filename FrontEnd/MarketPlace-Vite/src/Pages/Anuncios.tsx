@@ -12,6 +12,7 @@ type Categoria = 'Livros' | 'Eletronicos' | 'Vestuarios' | 'Outros'
 type TipoAnuncio = 'venda' | 'doacao'
 type ApiCategoria = 'LIVROS' | 'ELETRONICOS' | 'VESTUARIOS' | 'OUTROS'
 type ApiTipoAnuncio = 'VENDA' | 'DOACAO'
+type ApiStatusAnuncio = 'DISPONIVEL' | 'VENDIDO' | 'DOADO'
 type FiltroUsuario = 'todos' | 'meus' | 'interessantes'
 
 type ApiPaginaAnuncios = {
@@ -30,6 +31,7 @@ type ApiAnuncio = {
   descricao: string
   categoria: ApiCategoria
   tipo: ApiTipoAnuncio
+  status: ApiStatusAnuncio
   preco: number
   imagem: string
   usuarioId?: number
@@ -42,6 +44,7 @@ type Produto = {
   descricao: string
   categoria: Categoria
   tipo: TipoAnuncio
+  status: ApiStatusAnuncio
   valor?: number
   imagem: string
   usuarioId?: number
@@ -80,6 +83,16 @@ function formatarValor(produto: Produto) {
   }).format(produto.valor ?? 0)
 }
 
+function formatarStatus(status: ApiStatusAnuncio) {
+  const statusFormatados: Record<ApiStatusAnuncio, string> = {
+    DISPONIVEL: 'Disponivel',
+    VENDIDO: 'Vendido',
+    DOADO: 'Doado',
+  }
+
+  return statusFormatados[status]
+}
+
 function mapearCategoria(categoria: ApiCategoria): Categoria {
   const categoriasMapeadas: Record<ApiCategoria, Categoria> = {
     LIVROS: 'Livros',
@@ -98,6 +111,7 @@ function mapearAnuncio(anuncio: ApiAnuncio): Produto {
     descricao: anuncio.descricao,
     categoria: mapearCategoria(anuncio.categoria),
     tipo: anuncio.tipo === 'DOACAO' ? 'doacao' : 'venda',
+    status: anuncio.status ?? 'DISPONIVEL',
     valor: anuncio.preco,
     imagem: anuncio.imagem,
     usuarioId: anuncio.usuarioId,
@@ -169,6 +183,7 @@ function Anuncios() {
   const [carregandoInteressados, setCarregandoInteressados] = useState(false)
   const [erroInteressados, setErroInteressados] = useState<string | null>(null)
   const [apagandoId, setApagandoId] = useState<number | null>(null)
+  const [encerrandoId, setEncerrandoId] = useState<number | null>(null)
   const [anuncioParaApagar, setAnuncioParaApagar] = useState<Produto | null>(null)
 
   const usuarioLogadoId = obterUsuarioLogadoId()
@@ -476,6 +491,50 @@ function Anuncios() {
     }
   }
 
+  async function encerrarAnuncio(produto: Produto) {
+    const status = produto.tipo === 'venda' ? 'VENDIDO' : 'DOADO'
+
+    setEncerrandoId(produto.id)
+    setErro(null)
+
+    try {
+      const resposta = await fetch(`${apiBaseUrl}/api/anuncios/${produto.id}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...obterCabecalhosAutenticados(),
+        },
+        body: JSON.stringify({ status }),
+      })
+
+      if (!resposta.ok) {
+        if (respostaIndicaSessaoInvalida(resposta.status)) {
+          return
+        }
+
+        throw new Error(await obterMensagemErro(resposta, 'Nao foi possivel encerrar o anuncio.'))
+      }
+
+      const anuncioAtualizado = mapearAnuncio((await resposta.json()) as ApiAnuncio)
+      setProdutos((produtosAtuais) =>
+        filtroUsuario === 'todos'
+          ? produtosAtuais.filter((item) => item.id !== produto.id)
+          : produtosAtuais.map((item) =>
+              item.id === produto.id ? anuncioAtualizado : item,
+            ),
+      )
+      setProdutoSelecionado(anuncioAtualizado)
+      cacheDeAnuncios.current.clear()
+      setAtualizacao((versao) => versao + 1)
+    } catch (error) {
+      setErro(
+        error instanceof Error ? error.message : 'Nao foi possivel encerrar o anuncio no momento.',
+      )
+    } finally {
+      setEncerrandoId(null)
+    }
+  }
+
   async function mostrarInteressados(produto: Produto) {
     if (usuarioLogadoId === null) {
       redirecionarParaLogin()
@@ -621,7 +680,7 @@ function Anuncios() {
             {produtos.map((produto) => (
               <button
                 type="button"
-                className="product-card"
+                className={`product-card${produto.status !== 'DISPONIVEL' ? ' product-card--closed' : ''}`}
                 key={produto.id}
                 onClick={() => setProdutoSelecionado(produto)}
               >
@@ -745,6 +804,9 @@ function Anuncios() {
                 {produtoSelecionado.categoria}
               </span>
               <p>{produtoSelecionado.descricao}</p>
+              <span className="product-modal__status">
+                {formatarStatus(produtoSelecionado.status)}
+              </span>
               <strong>{formatarValor(produtoSelecionado)}</strong>
               {usuarioLogadoId !== null &&
               produtoSelecionado.usuarioId === usuarioLogadoId ? (
@@ -759,6 +821,19 @@ function Anuncios() {
                     >
                       mostrar interessados
                     </button>
+                    {produtoSelecionado.status === 'DISPONIVEL' && (
+                      <button
+                        type="button"
+                        disabled={encerrandoId === produtoSelecionado.id}
+                        onClick={() => void encerrarAnuncio(produtoSelecionado)}
+                      >
+                        {encerrandoId === produtoSelecionado.id
+                          ? 'Encerrando...'
+                          : produtoSelecionado.tipo === 'venda'
+                            ? 'Marcar como vendido'
+                            : 'Marcar como doado'}
+                      </button>
+                    )}
                     <button
                       type="button"
                       className="product-card__delete"
@@ -773,21 +848,28 @@ function Anuncios() {
                 </>
               ) : (
                 <>
+                  {produtoSelecionado.status !== 'DISPONIVEL' && (
+                    <p className="product-modal__interest-count">
+                      Este anuncio nao esta mais disponivel.
+                    </p>
+                  )}
                   {erroInteresse && (
                     <p className="product-modal__interest-error" role="alert">
                       {erroInteresse}
                     </p>
                   )}
-                  <button
-                    type="button"
-                    className="product-modal__interest-button"
-                    disabled={carregandoInteresse}
-                    onClick={() => void alternarInteresse(produtoSelecionado.id)}
-                  >
-                    {interessesDoUsuario[produtoSelecionado.id]
-                      ? 'desinteressei'
-                      : 'me interessei'}
-                  </button>
+                  {produtoSelecionado.status === 'DISPONIVEL' && (
+                    <button
+                      type="button"
+                      className="product-modal__interest-button"
+                      disabled={carregandoInteresse}
+                      onClick={() => void alternarInteresse(produtoSelecionado.id)}
+                    >
+                      {interessesDoUsuario[produtoSelecionado.id]
+                        ? 'desinteressei'
+                        : 'me interessei'}
+                    </button>
+                  )}
                 </>
               )}
             </div>

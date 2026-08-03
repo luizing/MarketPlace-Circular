@@ -2,6 +2,7 @@ package com.luizing.marktplaceCircular.repository;
 
 import com.luizing.marktplaceCircular.model.anuncio.Anuncio;
 import com.luizing.marktplaceCircular.model.anuncio.CategoriaAnuncio;
+import com.luizing.marktplaceCircular.model.anuncio.StatusAnuncio;
 import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -12,6 +13,23 @@ import org.springframework.data.repository.query.Param;
 public interface AnuncioRepository extends JpaRepository<Anuncio, Long> {
 
     long countByUsuarioId(Long usuarioId);
+
+    long countByStatus(StatusAnuncio status);
+
+    Page<Anuncio> findByStatusOrderByIdDesc(StatusAnuncio status, Pageable pageable);
+
+    Page<Anuncio> findByStatusAndTituloContainingIgnoreCaseOrderByIdDesc(
+            StatusAnuncio status, String titulo, Pageable pageable);
+
+    Page<Anuncio> findByStatusAndCategoriaInOrderByIdDesc(
+            StatusAnuncio status, List<CategoriaAnuncio> categorias, Pageable pageable);
+
+    Page<Anuncio> findByStatusAndTituloContainingIgnoreCaseAndCategoriaInOrderByIdDesc(
+            StatusAnuncio status,
+            String titulo,
+            List<CategoriaAnuncio> categorias,
+            Pageable pageable
+    );
 
     Page<Anuncio> findAllByOrderByIdDesc(Pageable pageable);
 

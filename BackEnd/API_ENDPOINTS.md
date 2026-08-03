@@ -53,6 +53,7 @@ Content-Type: application/json
   "descricao": "Livro usado em bom estado.",
   "categoria": "LIVROS",
   "tipo": "VENDA",
+  "status": "DISPONIVEL",
   "preco": 45.0,
   "imagem": "https://exemplo.com/imagem.jpg",
   "interessados": 0
@@ -63,11 +64,15 @@ O campo `usuarioId` e obrigatorio na criacao do anuncio. Se ele nao for informad
 
 Cada usuario pode possuir no maximo 3 anuncios. Uma quarta tentativa retorna `409 Conflict`.
 
+Todo anuncio e criado com status `DISPONIVEL`.
+
 ### Listar anuncios
 
 ```http
 GET /api/anuncios?pagina=0&tamanho=12
 ```
+
+A listagem publica retorna somente anuncios com status `DISPONIVEL`.
 
 Resposta esperada:
 
@@ -185,6 +190,8 @@ Adiciona o usuario a lista de interessados do anuncio. Se ele ja estiver na list
 
 O dono do anuncio nao pode demonstrar interesse no proprio anuncio. Nesse caso, a API retorna `403 Forbidden`.
 
+Anuncios encerrados tambem nao aceitam novos interesses e retornam `409 Conflict`.
+
 Resposta esperada:
 
 ```http
@@ -250,6 +257,24 @@ Resposta esperada quando o usuario nao e o dono:
 403 Forbidden
 ```
 
+### Encerrar anuncio
+
+```http
+PATCH /api/anuncios/{id}/status
+Authorization: Bearer {token}
+Content-Type: application/json
+```
+
+Corpo esperado para venda:
+
+```json
+{
+  "status": "VENDIDO"
+}
+```
+
+Para doacao, o status esperado e `DOADO`. Apenas o dono autenticado pode encerrar o anuncio. Anuncios encerrados permanecem visiveis em `Meus Anuncios`, mas deixam de aparecer na listagem publica e nao aceitam novos interesses.
+
 ### Listar interessados de um anuncio
 
 ```http
@@ -274,8 +299,8 @@ Resposta esperada:
 
 - A API trafega dados em JSON.
 - Os endpoints de anuncio usam DTOs na entrada e na saida.
-- Autenticacao e autorizacao ainda nao foram implementadas nesta etapa.
-- Quando a autenticacao for implementada, criacao e delecao de anuncios deverao exigir usuario autenticado.
+- Autenticacao e autorizacao usam JWT nas operacoes protegidas.
+- Criacao, delecao e encerramento de anuncios exigem usuario autenticado; apenas o dono pode deletar ou encerrar o proprio anuncio.
 
 ### Listar anuncios do usuario
 
@@ -376,8 +401,10 @@ Resposta esperada:
 {
   "itensAnunciados": 12,
   "alunosParticipando": 8,
-  "itensDisponiveis": 12
+  "itensDisponiveis": 7,
+  "itensVendidos": 3,
+  "itensDoados": 2
 }
 ```
 
-`itensAnunciados` representa o total historico de anuncios criados e nao diminui quando um anuncio e apagado. Enquanto o modelo nao possui status de vendido, `itensDisponiveis` representa o total atual de anuncios cadastrados.
+`itensAnunciados` representa o total historico de anuncios criados e nao diminui quando um anuncio e apagado. `itensDisponiveis`, `itensVendidos` e `itensDoados` contam, respectivamente, os anuncios com status `DISPONIVEL`, `VENDIDO` e `DOADO`.

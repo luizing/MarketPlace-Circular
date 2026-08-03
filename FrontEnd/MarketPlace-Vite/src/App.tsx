@@ -15,6 +15,8 @@ type Estatisticas = {
   itensAnunciados: number
   alunosParticipando: number
   itensDisponiveis: number
+  itensVendidos: number
+  itensDoados: number
 }
 
 function App() {
@@ -23,6 +25,7 @@ function App() {
   )
   const [estatisticas, setEstatisticas] = useState<Estatisticas | null>(null)
   const [erroEstatisticas, setErroEstatisticas] = useState(false)
+  const cacheDeEstatisticas = useRef<Estatisticas | null>(null)
   const atualizacaoEstatisticasPendente = useRef(false)
   const [versaoAtualizacaoEstatisticas, setVersaoAtualizacaoEstatisticas] = useState(0)
 
@@ -54,6 +57,14 @@ function App() {
 
   useEffect(() => {
     async function carregarEstatisticas() {
+      const estatisticasEmMemoria = cacheDeEstatisticas.current
+
+      if (estatisticasEmMemoria) {
+        setEstatisticas(estatisticasEmMemoria)
+      }
+
+      setErroEstatisticas(false)
+
       try {
         const url = new URL(`${apiBaseUrl}/api/estatisticas`, window.location.origin)
 
@@ -70,14 +81,26 @@ function App() {
           throw new Error('Nao foi possivel carregar as estatisticas.')
         }
 
-        setEstatisticas((await resposta.json()) as Estatisticas)
+        const estatisticasAtualizadas = (await resposta.json()) as Estatisticas
+        cacheDeEstatisticas.current = estatisticasAtualizadas
+        setEstatisticas(estatisticasAtualizadas)
       } catch {
-        setErroEstatisticas(true)
+        if (!estatisticasEmMemoria) {
+          setErroEstatisticas(true)
+        }
       }
     }
 
     void carregarEstatisticas()
   }, [versaoAtualizacaoEstatisticas])
+
+  useEffect(() => {
+    const intervalo = window.setInterval(() => {
+      setVersaoAtualizacaoEstatisticas((versao) => versao + 1)
+    }, 60_000)
+
+    return () => window.clearInterval(intervalo)
+  }, [])
 
   useEffect(() => {
     function atualizarQuandoServidorResponder(event: MessageEvent) {
@@ -198,6 +221,14 @@ function App() {
           <p>
             <span>Número de itens disponiveis:</span>
             <strong>{estatisticas?.itensDisponiveis ?? '-'}</strong>
+          </p>
+          <p>
+            <span>Número de itens vendidos:</span>
+            <strong>{estatisticas?.itensVendidos ?? '-'}</strong>
+          </p>
+          <p>
+            <span>Número de itens doados:</span>
+            <strong>{estatisticas?.itensDoados ?? '-'}</strong>
           </p>
           <p>
             <span>Número de colegas participando:</span>

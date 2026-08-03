@@ -20,5 +20,6 @@ class SecurityConfigTests {
         assertTrue(configuracao.getAllowedOrigins()
                 .contains("https://market-place-circular.vercel.app"));
         assertTrue(configuracao.getAllowedHeaders().containsAll(List.of("Authorization", "Content-Type")));
+        assertTrue(configuracao.getAllowedMethods().contains("PATCH"));
     }
 }

@@ -32,3 +32,16 @@
 - A API retorna erros em JSON para limite de anuncios, credenciais invalidas, falta de autenticacao e tentativas sem permissao.
 - O frontend interpreta essas mensagens ao criar contas e anuncios.
 - A exclusao de um anuncio exige confirmacao explicita em um dialogo antes da requisicao de remocao.
+
+## 2026-08-03 - Ciclo de vida dos anuncios
+
+- Anuncios possuem os status `DISPONIVEL`, `VENDIDO` e `DOADO`; novos anuncios iniciam como disponiveis.
+- A listagem publica e a estatistica de itens disponiveis consideram apenas anuncios ativos, enquanto `Meus Anuncios` preserva o historico.
+- O encerramento usa `PATCH /api/anuncios/{id}/status`, identifica o proprietario pelo JWT e aceita apenas `VENDIDO` para vendas ou `DOADO` para doacoes.
+- Anuncios encerrados nao aceitam novos interesses.
+
+## 2026-08-03 - Estatisticas por status
+
+- O endpoint de estatisticas passou a expor contagens separadas para anuncios disponiveis, vendidos e doados.
+- A landing page exibe as tres contagens, alem do total historico de anuncios e de usuarios cadastrados.
+- As estatisticas usam cache em memoria e o cache do Service Worker antes da revalidacao periodica em segundo plano.

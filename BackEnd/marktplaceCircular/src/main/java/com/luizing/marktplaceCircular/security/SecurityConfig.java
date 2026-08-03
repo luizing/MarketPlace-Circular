@@ -33,7 +33,7 @@ public class SecurityConfig {
                 "http://localhost:5173",
                 "https://market-place-circular.vercel.app"
         ));
-        configuracao.setAllowedMethods(List.of("GET", "POST", "DELETE", "OPTIONS"));
+        configuracao.setAllowedMethods(List.of("GET", "POST", "PATCH", "DELETE", "OPTIONS"));
         configuracao.setAllowedHeaders(List.of("Authorization", "Content-Type"));
 
         UrlBasedCorsConfigurationSource fonte = new UrlBasedCorsConfigurationSource();

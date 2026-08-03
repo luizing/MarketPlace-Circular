@@ -3,6 +3,7 @@ package com.luizing.marktplaceCircular.dtos;
 import com.luizing.marktplaceCircular.model.anuncio.Anuncio;
 import com.luizing.marktplaceCircular.model.anuncio.CategoriaAnuncio;
 import com.luizing.marktplaceCircular.model.anuncio.TipoAnuncio;
+import com.luizing.marktplaceCircular.model.anuncio.StatusAnuncio;
 
 public record AnuncioResponseDto(
         Long id,
@@ -10,6 +11,7 @@ public record AnuncioResponseDto(
         String descricao,
         CategoriaAnuncio categoria,
         TipoAnuncio tipo,
+        StatusAnuncio status,
         double preco,
         String imagem,
         Long usuarioId,
@@ -23,6 +25,7 @@ public record AnuncioResponseDto(
                 anuncio.getDescricao(),
                 anuncio.getCategoria(),
                 anuncio.getTipo(),
+                anuncio.getStatus(),
                 anuncio.getPreco(),
                 anuncio.getImagem(),
                 anuncio.getUsuario() == null ? null : anuncio.getUsuario().getId(),

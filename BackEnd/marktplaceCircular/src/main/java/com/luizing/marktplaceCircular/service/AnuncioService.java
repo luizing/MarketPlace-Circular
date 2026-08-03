@@ -6,6 +6,8 @@ import com.luizing.marktplaceCircular.dtos.PaginaResponseDto;
 import com.luizing.marktplaceCircular.dtos.UserContatoDto;
 import com.luizing.marktplaceCircular.model.anuncio.Anuncio;
 import com.luizing.marktplaceCircular.model.anuncio.CategoriaAnuncio;
+import com.luizing.marktplaceCircular.model.anuncio.StatusAnuncio;
+import com.luizing.marktplaceCircular.model.anuncio.TipoAnuncio;
 import com.luizing.marktplaceCircular.model.estatistica.Estatistica;
 import com.luizing.marktplaceCircular.repository.AnuncioRepository;
 import com.luizing.marktplaceCircular.repository.EstatisticaRepository;
@@ -95,15 +97,16 @@ public class AnuncioService {
         Page<Anuncio> anuncios;
 
         if (possuiTitulo && possuiCategorias) {
-            anuncios = anuncioRepository.findByTituloContainingIgnoreCaseAndCategoriaInOrderByIdDesc(
-                    tituloNormalizado, categorias, pageable);
+            anuncios = anuncioRepository.findByStatusAndTituloContainingIgnoreCaseAndCategoriaInOrderByIdDesc(
+                    StatusAnuncio.DISPONIVEL, tituloNormalizado, categorias, pageable);
         } else if (possuiTitulo) {
-            anuncios = anuncioRepository.findByTituloContainingIgnoreCaseOrderByIdDesc(
-                    tituloNormalizado, pageable);
+            anuncios = anuncioRepository.findByStatusAndTituloContainingIgnoreCaseOrderByIdDesc(
+                    StatusAnuncio.DISPONIVEL, tituloNormalizado, pageable);
         } else if (possuiCategorias) {
-            anuncios = anuncioRepository.findByCategoriaInOrderByIdDesc(categorias, pageable);
+            anuncios = anuncioRepository.findByStatusAndCategoriaInOrderByIdDesc(
+                    StatusAnuncio.DISPONIVEL, categorias, pageable);
         } else {
-            anuncios = anuncioRepository.findAllByOrderByIdDesc(pageable);
+            anuncios = anuncioRepository.findByStatusOrderByIdDesc(StatusAnuncio.DISPONIVEL, pageable);
         }
 
         return PaginaResponseDto.fromPage(anuncios.map(AnuncioResponseDto::fromAnuncio));
@@ -135,6 +138,7 @@ public class AnuncioService {
     @Transactional
     public Optional<AnuncioResponseDto> interessar(Long anuncioId, Long usuarioId) {
         return anuncioRepository.findById(anuncioId)
+                .filter(anuncio -> anuncio.getStatus() == StatusAnuncio.DISPONIVEL)
                 .flatMap(anuncio -> userRepository.findById(usuarioId)
                         .filter(usuario -> anuncio.getUsuario() == null
                                 || !anuncio.getUsuario().getId().equals(usuario.getId()))
@@ -164,6 +168,25 @@ public class AnuncioService {
                             userRepository.save(usuario);
                             return AnuncioResponseDto.fromAnuncio(anuncio);
                         }));
+    }
+
+    @Transactional
+    public Optional<AnuncioResponseDto> encerrar(Long anuncioId, StatusAnuncio status) {
+        if (status != StatusAnuncio.VENDIDO && status != StatusAnuncio.DOADO) {
+            return Optional.empty();
+        }
+
+        return anuncioRepository.findById(anuncioId)
+                .filter(anuncio -> statusCompativelComTipo(anuncio.getTipo(), status))
+                .map(anuncio -> {
+                    anuncio.setStatus(status);
+                    return AnuncioResponseDto.fromAnuncio(anuncioRepository.save(anuncio));
+                });
+    }
+
+    private boolean statusCompativelComTipo(TipoAnuncio tipo, StatusAnuncio status) {
+        return (tipo == TipoAnuncio.VENDA && status == StatusAnuncio.VENDIDO)
+                || (tipo == TipoAnuncio.DOACAO && status == StatusAnuncio.DOADO);
     }
 
     @Transactional(readOnly = true)

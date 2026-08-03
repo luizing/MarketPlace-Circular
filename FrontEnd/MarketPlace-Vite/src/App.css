@@ -400,6 +400,10 @@
   transform: scale(1.03);
 }
 
+.product-card--closed {
+  background: #e6e6e6;
+}
+
 .product-card:focus-visible {
   outline: 2px solid #000;
   outline-offset: 4px;
@@ -614,6 +618,7 @@
 }
 
 .product-modal__category,
+.product-modal__status,
 .product-modal__content strong {
   border: 1px solid #000;
   border-radius: 999px;
@@ -622,6 +627,11 @@
   font-weight: 700;
   justify-self: flex-start;
   padding: 7px 12px;
+}
+
+.product-modal__status {
+  background: #000;
+  color: #fff;
 }
 
 .product-modal__content p {

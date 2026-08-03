@@ -11,9 +11,9 @@
         outro usuário.
 
   3. Ciclo de vida do anúncio
-      - Adicionar status: disponível, vendido e doado.
-      - Permitir que o dono encerre um anúncio.
-      - Fazer itensDisponiveis considerar somente anúncios ativos.
+      - [x] Adicionar status: disponível, vendido e doado.
+      - [x] Permitir que o dono encerre um anúncio.
+      - [x] Fazer itensDisponiveis considerar somente anúncios ativos.
 
   4. Experiência de usuário
       - Sincronizar anúncios em segundo plano, sem ocultar os anúncios.

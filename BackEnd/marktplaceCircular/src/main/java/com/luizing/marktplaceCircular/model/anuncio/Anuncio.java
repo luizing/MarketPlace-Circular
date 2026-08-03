@@ -10,6 +10,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.Column;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Getter;
@@ -35,6 +36,10 @@ public class Anuncio {
 
     @Enumerated(EnumType.STRING)
     private TipoAnuncio tipo;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private StatusAnuncio status = StatusAnuncio.DISPONIVEL;
 
     private double preco;
 

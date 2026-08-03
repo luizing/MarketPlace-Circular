@@ -69,6 +69,10 @@ public class UserService {
                 .orElse(false);
     }
 
+    public Optional<Long> buscarIdPorLogin(String login) {
+        return userRepository.findByLogin(login).map(User::getId);
+    }
+
     public Optional<UserContatoDto> retornarContato(Long id) {
         return userRepository.findById(id)
                 .map(user -> new UserContatoDto(user.getId(), user.getLogin(), user.getContato()));

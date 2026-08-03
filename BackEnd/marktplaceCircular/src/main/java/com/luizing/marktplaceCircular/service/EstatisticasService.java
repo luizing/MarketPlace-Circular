@@ -2,6 +2,7 @@ package com.luizing.marktplaceCircular.service;
 
 import com.luizing.marktplaceCircular.dtos.EstatisticasResponseDto;
 import com.luizing.marktplaceCircular.model.estatistica.Estatistica;
+import com.luizing.marktplaceCircular.model.anuncio.StatusAnuncio;
 import com.luizing.marktplaceCircular.repository.AnuncioRepository;
 import com.luizing.marktplaceCircular.repository.EstatisticaRepository;
 import com.luizing.marktplaceCircular.repository.UserRepository;
@@ -35,7 +36,9 @@ public class EstatisticasService {
         return new EstatisticasResponseDto(
                 itensAnunciados,
                 alunosParticipando,
-                anuncioRepository.count()
+                anuncioRepository.countByStatus(StatusAnuncio.DISPONIVEL),
+                anuncioRepository.countByStatus(StatusAnuncio.VENDIDO),
+                anuncioRepository.countByStatus(StatusAnuncio.DOADO)
         );
     }
 
