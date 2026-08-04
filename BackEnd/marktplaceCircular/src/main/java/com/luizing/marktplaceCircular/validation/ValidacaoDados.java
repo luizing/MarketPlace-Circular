@@ -8,8 +8,8 @@ import java.net.URISyntaxException;
 
 public final class ValidacaoDados {
 
-    private static final int TITULO_MAXIMO = 100;
-    private static final int DESCRICAO_MAXIMA = 1000;
+    private static final int TITULO_MAXIMO = 25;
+    private static final int DESCRICAO_MAXIMA = 200;
     private static final int URL_IMAGEM_MAXIMA = 2048;
     private static final int LOGIN_MAXIMO = 50;
     private static final int CONTATO_MAXIMO = 254;

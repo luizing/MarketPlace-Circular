@@ -136,12 +136,12 @@ function AnuncioForm({ onClose, onCreated }: AnuncioFormProps) {
         >
           <label>
             <span>Titulo</span>
-            <input type="text" name="titulo" maxLength={100} required />
+            <input type="text" name="titulo" maxLength={25} required />
           </label>
 
           <label>
             <span>Descricao</span>
-            <textarea name="descricao" rows={4} maxLength={1000} required />
+            <textarea name="descricao" rows={4} maxLength={200} required />
           </label>
 
           <label>

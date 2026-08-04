@@ -788,26 +788,51 @@ function Anuncios() {
           >
             <div className="product-modal__header">
               <h2>{produtoSelecionado.nome}</h2>
-              <button
-                type="button"
-                onClick={() => setProdutoSelecionado(null)}
-                aria-label="Fechar detalhes do produto"
-              >
-                Fechar
-              </button>
+              <div className="product-modal__header-actions">
+                {produtoSelecionado.status === 'DISPONIVEL' &&
+                produtoSelecionado.usuarioId !== usuarioLogadoId && (
+                  <button
+                    type="button"
+                    className="product-modal__interest-button"
+                    disabled={carregandoInteresse}
+                    onClick={() => void alternarInteresse(produtoSelecionado.id)}
+                  >
+                    {interessesDoUsuario[produtoSelecionado.id]
+                      ? 'desinteressei'
+                      : 'me interessei'}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setProdutoSelecionado(null)}
+                  aria-label="Fechar detalhes do produto"
+                >
+                  Fechar
+                </button>
+              </div>
             </div>
 
             <img src={produtoSelecionado.imagem} alt={produtoSelecionado.nome} />
 
             <div className="product-modal__content">
-              <span className="product-modal__category">
-                {produtoSelecionado.categoria}
-              </span>
+              <div className="product-modal__labels">
+                <span className="product-modal__category">
+                  {produtoSelecionado.categoria}
+                </span>
+                <span
+                  className={`product-modal__type product-modal__type--${produtoSelecionado.tipo}`}
+                >
+                  {produtoSelecionado.tipo === 'doacao'
+                    ? 'Doacao'
+                    : formatarValor(produtoSelecionado)}
+                </span>
+              </div>
               <p>{produtoSelecionado.descricao}</p>
-              <span className="product-modal__status">
-                {formatarStatus(produtoSelecionado.status)}
-              </span>
-              <strong>{formatarValor(produtoSelecionado)}</strong>
+              {produtoSelecionado.status !== 'DISPONIVEL' && (
+                <span className="product-modal__status">
+                  {formatarStatus(produtoSelecionado.status)}
+                </span>
+              )}
               {usuarioLogadoId !== null &&
               produtoSelecionado.usuarioId === usuarioLogadoId ? (
                 <>
@@ -857,18 +882,6 @@ function Anuncios() {
                     <p className="product-modal__interest-error" role="alert">
                       {erroInteresse}
                     </p>
-                  )}
-                  {produtoSelecionado.status === 'DISPONIVEL' && (
-                    <button
-                      type="button"
-                      className="product-modal__interest-button"
-                      disabled={carregandoInteresse}
-                      onClick={() => void alternarInteresse(produtoSelecionado.id)}
-                    >
-                      {interessesDoUsuario[produtoSelecionado.id]
-                        ? 'desinteressei'
-                        : 'me interessei'}
-                    </button>
                   )}
                 </>
               )}

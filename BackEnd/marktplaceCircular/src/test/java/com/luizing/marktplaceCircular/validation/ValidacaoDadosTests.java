@@ -39,4 +39,34 @@ class ValidacaoDadosTests {
 
         assertThrows(DadosInvalidosException.class, () -> ValidacaoDados.validarAnuncio(anuncio));
     }
+
+    @Test
+    void deveRejeitarTituloComMaisDeVinteECincoCaracteres() {
+        AnuncioDto anuncio = new AnuncioDto(
+                "Titulo com mais de vinte e cinco caracteres",
+                "Em bom estado.",
+                CategoriaAnuncio.LIVROS,
+                TipoAnuncio.VENDA,
+                30,
+                "https://exemplo.com/imagem.png",
+                1L
+        );
+
+        assertThrows(DadosInvalidosException.class, () -> ValidacaoDados.validarAnuncio(anuncio));
+    }
+
+    @Test
+    void deveRejeitarDescricaoComMaisDeDuzentosCaracteres() {
+        AnuncioDto anuncio = new AnuncioDto(
+                "Livro de Calculo",
+                "a".repeat(201),
+                CategoriaAnuncio.LIVROS,
+                TipoAnuncio.VENDA,
+                30,
+                "https://exemplo.com/imagem.png",
+                1L
+        );
+
+        assertThrows(DadosInvalidosException.class, () -> ValidacaoDados.validarAnuncio(anuncio));
+    }
 }
